@@ -14,6 +14,9 @@ This package is a staged modernization of the existing CIRITAS PHP/MySQL site. I
 - Legacy Windows-1251 conversion support.
 - v4 order flow with legacy-compatible `cart`, `cart_items` and `csOrders` integration.
 - Multiple products/licenses in one order, quantity editing and cart checkout.
+- Legacy order type (`zType`): organization or private person.
+- Legacy delivery options: Russian Post (free) or courier service (+1000 RUB).
+- Legacy additional products/services from active `csPriceItems` records in `PriceSectionID=7`.
 
 ## Local configuration
 
@@ -33,10 +36,13 @@ The modern order flow deliberately preserves the old database model:
 - selected licenses are stored in `cart_items`;
 - checkout creates one `csOrders` record with `ProductID=0`, matching the historical composite-order convention;
 - `cart.IsOrdered` is set to the new `csOrders.ID`;
+- `cart.zType`, `cart.Delivery`, `cart.ExtraProduct` and `cart.TotalSum` retain the historical checkout semantics;
+- courier delivery adds 1000 RUB to the order total;
+- the optional extra product/service is selected from `csPriceItems` where `PriceSectionID=7` and `IsActive=1`;
 - `OrderDate` remains a Unix timestamp;
 - `OrderNumber` continues to use `csSettings.LastOrderNumber` when available.
 
-Before merging v4 into production, test add-to-cart, quantity updates, checkout, order totals and `/admin-modern/order-view.php` against a copy of the live database.
+Before merging v4 into production, test add-to-cart, quantity updates, checkout, organization/private-person orders, both delivery modes, extra products, order totals and `/admin-modern/order-view.php` against a copy of the live database.
 
 ## Deployment approach
 
