@@ -12,6 +12,8 @@ This package is a staged modernization of the existing CIRITAS PHP/MySQL site. I
 - Product assets screen for downloads, prices and screenshots.
 - PDO-based MySQL access.
 - Legacy Windows-1251 conversion support.
+- v4 order flow with legacy-compatible `cart`, `cart_items` and `csOrders` integration.
+- Multiple products/licenses in one order, quantity editing and cart checkout.
 
 ## Local configuration
 
@@ -22,6 +24,19 @@ Do not commit passwords, database credentials, uploaded program files or screens
 ## Uploads and photos
 
 The repository intentionally does not include the large historical `Uploads` / `uploads` and `photos` directories. Keep the existing server copies and configure their paths in the local configuration.
+
+## v4 order compatibility
+
+The modern order flow deliberately preserves the old database model:
+
+- active cart is stored in `cart` and identified by `cartID` / `cartCode` cookies;
+- selected licenses are stored in `cart_items`;
+- checkout creates one `csOrders` record with `ProductID=0`, matching the historical composite-order convention;
+- `cart.IsOrdered` is set to the new `csOrders.ID`;
+- `OrderDate` remains a Unix timestamp;
+- `OrderNumber` continues to use `csSettings.LastOrderNumber` when available.
+
+Before merging v4 into production, test add-to-cart, quantity updates, checkout, order totals and `/admin-modern/order-view.php` against a copy of the live database.
 
 ## Deployment approach
 
