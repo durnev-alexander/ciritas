@@ -16,6 +16,11 @@ return [
         'photos_path' => __DIR__ . '/../photos',
         'photos_url' => '/photos/',
     ],
+    'mail' => [
+        'enabled' => false,
+        'from' => '',
+        'order_to' => '',
+    ],
     'admin' => [
         'username' => getenv('CIRITAS_ADMIN_USER') ?: '',
         'password_hash' => getenv('CIRITAS_ADMIN_PASSWORD_HASH') ?: '',
