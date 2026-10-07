@@ -5,6 +5,11 @@ session_start();
 function cfg2(string $path, mixed $default = null): mixed { return cfg($path, $default); }
 function aesc(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function a_legacy(string|null $s): string { return legacy($s); }
+function admin_db_text(string $value): string {
+    $charset=strtolower((string)cfg('db.charset','latin1'));
+    if($value===''||str_contains($charset,'utf8')) return $value;
+    return mb_convert_encoding($value,'Windows-1251','UTF-8');
+}
 
 $admin = (array)cfg2('admin', []);
 $adminUser = (string)($admin['username'] ?? getenv('CIRITAS_ADMIN_USER') ?: '');

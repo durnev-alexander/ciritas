@@ -12,4 +12,9 @@ return [
         'uploads_path' => '/absolute/path/to/Uploads',
         'photos_path' => '/absolute/path/to/photos',
     ],
+    'mail' => [
+        'enabled' => false,
+        'from' => 'site@example.com',
+        'order_to' => 'sales@example.com',
+    ],
 ];
