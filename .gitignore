@@ -1,0 +1,17 @@
+# Local secrets and environment-specific settings
+config/local.php
+.env
+.env.*
+
+# Runtime / uploaded content
+storage/*
+!storage/.gitkeep
+Uploads/
+uploads/
+photos/
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,4 @@
+<?php
+require __DIR__.'/bootstrap.php'; admin_require_login();
+function admin_header(string $title): void { ?><!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=aesc($title)?> — CIRITAS Admin</title><link rel="stylesheet" href="assets/css/admin.css"></head><body><div class="admin-shell"><aside><a class="admin-brand" href="index.php">CIRITAS</a><nav><a href="index.php">Обзор</a><a href="products.php">Продукты</a><a href="groups.php">Группы</a><a href="orders.php">Заказы</a><a href="news.php">Новости</a><a href="faq.php">FAQ</a><a href="partners.php">Партнёры</a><a href="pages.php">Страницы</a><a href="settings.php">Настройки</a><a href="logout.php">Выход</a></nav></aside><main class="admin-main"><div class="admin-top"><h1><?=aesc($title)?></h1><a href="../index.php" target="_blank">Открыть сайт ↗</a></div><?php }
+function admin_footer(): void { ?></main></div></body></html><?php }
