@@ -31,6 +31,21 @@ function order_db_text(string $value): string {
     return mb_convert_encoding($value, 'Windows-1251', 'UTF-8');
 }
 
+function order_next_number(): int {
+    try {
+        $pdo = db();
+        $st = $pdo->prepare("UPDATE csSettings SET Value=LAST_INSERT_ID(CAST(Value AS UNSIGNED)+1) WHERE Name='LastOrderNumber'");
+        $st->execute();
+        if ($st->rowCount() > 0) {
+            $number = (int)$pdo->query('SELECT LAST_INSERT_ID()')->fetchColumn();
+            if ($number > 0) return $number;
+        }
+    } catch (Throwable) {
+        // Fall back to an order ID-based value when the legacy setting is unavailable.
+    }
+    return 0;
+}
+
 function order_insert(array $values): int {
     $columns = order_columns();
     $data = [];
