@@ -79,10 +79,49 @@ function cart_items(?int $cartId = null): array {
     return $q->fetchAll();
 }
 
-function cart_total(?int $cartId = null): float {
+function cart_base_total(?int $cartId = null): float {
     $total = 0.0;
     foreach (cart_items($cartId) as $item) $total += (float)$item['Price'] * (int)$item['Amount'];
     return $total;
+}
+
+function cart_extra_products(): array {
+    try {
+        return db()->query("SELECT ID,Name,Price FROM csPriceItems WHERE PriceSectionID=7 AND IsActive=1 ORDER BY Price,Name")->fetchAll();
+    } catch (Throwable) {
+        return [];
+    }
+}
+
+function cart_extra_product(int $id): ?array {
+    if ($id < 1) return null;
+    $q = db()->prepare('SELECT ID,Name,Price FROM csPriceItems WHERE ID=? AND PriceSectionID=7 AND IsActive=1 LIMIT 1');
+    $q->execute([$id]);
+    return $q->fetch() ?: null;
+}
+
+function cart_checkout_total(array $cart): float {
+    $total = cart_base_total((int)$cart['ID']);
+    if ((int)($cart['Delivery'] ?? 0) === 1) $total += 1000;
+    $extra = cart_extra_product((int)($cart['ExtraProduct'] ?? 0));
+    if ($extra) $total += (float)$extra['Price'];
+    return $total;
+}
+
+function cart_set_checkout_options(int $type, int $delivery, int $extraProduct): void {
+    $cart = cart_current();
+    if (!$cart) throw new RuntimeException('Корзина не найдена.');
+    $type = $type === 1 ? 1 : 0;
+    $delivery = $delivery === 1 ? 1 : 0;
+    $extraProduct = cart_extra_product($extraProduct) ? $extraProduct : 0;
+    db()->prepare('UPDATE cart SET zType=?, Delivery=?, ExtraProduct=?, TotalSum=? WHERE ID=? AND Code=?')
+        ->execute([$type, $delivery, $extraProduct, cart_checkout_total(array_merge($cart, ['Delivery'=>$delivery,'ExtraProduct'=>$extraProduct])), (int)$cart['ID'], (string)$cart['Code']]);
+}
+
+function cart_total(?int $cartId = null): float {
+    if ($cartId !== null) return cart_base_total($cartId);
+    $cart = cart_current();
+    return $cart ? cart_checkout_total($cart) : 0.0;
 }
 
 function cart_clear_cookies(): void {
