@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
 
                 $successId = order_insert($values);
                 $_SESSION['_order_csrf'] = bin2hex(random_bytes(24));
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 $error = 'Не удалось сохранить заказ в существующей базе. Проверьте структуру таблицы csOrders и настройки подключения.';
             }
         }
@@ -112,7 +112,7 @@ render_header('Оформление заказа');
 <?php if ($error): ?><div class="form-message error-box"><?=htmlspecialchars($error)?></div><?php endif; ?>
 <form class="content-card order-form" method="post" action="order.php">
 <input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_order_csrf'])?>">
-<label class="field"><span>Продукт *</span><select class="input" name="product_id" required onchange="this.form.submit()"><option value="">Выберите продукт</option><?php foreach($products as $p): ?><option value="<?=(int)$p['ID']?>" <?=$selectedProduct===(int)$p['ID']?'selected':''?>><?=htmlspecialchars(legacy($p['Name']))?></option><?php endforeach; ?></select></label>
+<label class="field"><span>Продукт *</span><select class="input" name="product_id" required><option value="">Выберите продукт</option><?php foreach($products as $p): ?><option value="<?=(int)$p['ID']?>" <?=$selectedProduct===(int)$p['ID']?'selected':''?>><?=htmlspecialchars(legacy($p['Name']))?></option><?php endforeach; ?></select></label>
 <?php if ($selectedProduct && $prices): ?><label class="field"><span>Вариант / лицензия</span><select class="input" name="price_id"><option value="">Не выбран</option><?php foreach($prices as $price): $label=legacy((string)($price['Title']??$price['Name']??'Вариант')); if(isset($price['Price']) && $price['Price']!=='') $label.=' — '.legacy((string)$price['Price']); ?><option value="<?=(int)$price['ID']?>" <?=$selectedPrice===(int)$price['ID']?'selected':''?>><?=htmlspecialchars($label)?></option><?php endforeach; ?></select></label><?php endif; ?>
 <div class="form-grid-public">
 <label class="field"><span>Имя / ФИО *</span><input class="input" name="name" required maxlength="160" value="<?=htmlspecialchars((string)($_POST['name']??''))?>"></label>
