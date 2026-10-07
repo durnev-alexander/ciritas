@@ -52,7 +52,7 @@ return [
     ],
     'mail' => [
         'enabled' => true,
-        'to' => 'orders@example.ru',
+        'order_to' => 'orders@example.ru',
         'from' => 'site@example.ru',
     ],
 ];
