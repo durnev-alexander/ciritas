@@ -18,6 +18,18 @@ try {
     $prices=$q->fetchAll();
 } catch(Throwable) {}
 
+$shots=[];
+try {
+    $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY ID');
+    $q->execute([$id]);
+    $shots=$q->fetchAll();
+} catch(Throwable) {}
+
+function product_photo_url(string $file): string {
+    $base=rtrim((string)cfg('site.photos_url','/photos/'),'/').'/';
+    return $base.rawurlencode($file);
+}
+
 render_header(legacy($p['Name']));
 ?>
 <section class="section"><div class="container">
@@ -29,6 +41,12 @@ render_header(legacy($p['Name']));
 <div class="content-card"><?=legacy($p['About']??'')?></div>
 
 <?php if(!empty($p['Features'])): ?><div class="content-card"><h2>Возможности</h2><?=legacy($p['Features'])?></div><?php endif; ?>
+
+<?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
+<?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$thumb!==''?$thumb:$full; if($preview==='') continue; ?>
+<a class="product-shot" href="<?=htmlspecialchars(product_photo_url($full!==''?$full:$preview))?>" target="_blank" rel="noopener"><img src="<?=htmlspecialchars(product_photo_url($preview))?>" alt="<?=htmlspecialchars(legacy((string)($s['Name']??'')))?>"><?php if(!empty($s['Name'])): ?><span><?=htmlspecialchars(legacy((string)$s['Name']))?></span><?php endif; ?></a>
+<?php endforeach; ?>
+</div></div><?php endif; ?>
 
 <?php if($prices): ?><div class="content-card"><h2>Цены и лицензии</h2><div class="license-list">
 <?php foreach($prices as $price): ?><div class="license-row"><div><strong><?=htmlspecialchars(legacy((string)($price['Title']??$price['Name']??'Лицензия')))?></strong><div class="muted"><?=number_format((float)($price['Price']??0),0,',',' ')?> ₽</div></div><?php if(!isset($p['OrderAllow']) || (int)$p['OrderAllow']===1): ?><form class="inline-form" method="post" action="cart.php"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_cart_csrf'])?>"><input type="hidden" name="action" value="add"><input type="hidden" name="price_id" value="<?=(int)$price['ID']?>"><input class="input qty-input" type="number" name="amount" min="1" max="999" value="1"><button class="btn btn-primary" type="submit">В корзину</button></form><?php endif; ?></div><?php endforeach; ?>
@@ -45,5 +63,5 @@ try {
     $downloads=$d->fetchAll();
 } catch(Throwable) {}
 ?>
-<?php if($downloads): ?><div class="content-card"><h2>Скачать</h2><ul><?php foreach($downloads as $f): ?><li><a href="download.php?id=<?=(int)$f['ID']?>"><?=htmlspecialchars(legacy((string)($f['Description']??$f['File'])))?></a></li><?php endforeach; ?></ul></div><?php endif; ?>
+<?php if($downloads): ?><div class="content-card"><h2>Скачать</h2><ul class="download-list"><?php foreach($downloads as $f): ?><li><a href="download.php?id=<?=(int)$f['ID']?>"><?=htmlspecialchars(legacy((string)($f['Description']??$f['File'])))?></a><?php if(!empty($f['Downloads'])): ?><span class="muted">Скачиваний: <?=(int)$f['Downloads']?></span><?php endif; ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 </div></section><?php render_footer();
