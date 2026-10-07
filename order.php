@@ -2,6 +2,7 @@
 require __DIR__.'/app/bootstrap.php';
 require __DIR__.'/app/order_compat.php';
 require __DIR__.'/app/cart.php';
+require __DIR__.'/app/order_notifications.php';
 require __DIR__.'/includes/layout.php';
 if(session_status()!==PHP_SESSION_ACTIVE)session_start();
 if(empty($_SESSION['_order_csrf']))$_SESSION['_order_csrf']=bin2hex(random_bytes(24));
@@ -29,6 +30,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $error===''){
     foreach(['Organization','LegalAddress','PostAddress','INN','KPP','OKPO','OKONH','BIK','Bank','RAccount','KAccount','Fax','Phone','Email','LastName','FirstName','MiddleName','WhereFrom','Comments'] as $f)$values[$f]=order_db_text((string)$values[$f]);
     db()->beginTransaction();$successId=order_insert($values);if($successNumber<1)$successNumber=$successId;
     db()->prepare('UPDATE cart SET IsOrdered=?, TotalSum=? WHERE ID=? AND Code=?')->execute([$successId,$total,(int)$cart['ID'],(string)$cart['Code']]);db()->commit();
+    order_send_notification(['number'=>$successNumber,'total'=>$total,'organization'=>$organization,'contact'=>trim($lastname.' '.$firstname.' '.$middlename),'phone'=>$phone,'email'=>$email]);
     cart_clear_cookies();$_SESSION['_order_csrf']=bin2hex(random_bytes(24));
    }catch(Throwable $e){if(db()->inTransaction())db()->rollBack();$error='Не удалось сохранить заказ. Проверьте подключение к базе.';}
   }
