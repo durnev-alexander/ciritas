@@ -58,7 +58,7 @@ function product_image_url(array $product): string {
                 $q->execute([$id]);
                 $shot = $q->fetch();
                 if ($shot) {
-                    $file = trim(legacy((string)($shot['FileThumb'] ?: $shot['FileFull'] ?: '')));
+                    $file = trim(legacy((string)($shot['FileFull'] ?: $shot['FileThumb'] ?: '')));
                     if ($file !== '') $shotCache[$id] = rtrim((string)cfg('site.photos_url','/photos/'),'/').'/'.rawurlencode($file);
                 }
             } catch (Throwable) {}
