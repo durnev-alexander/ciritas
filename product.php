@@ -1,6 +1,7 @@
 <?php
 require __DIR__.'/app/bootstrap.php';
 require __DIR__.'/app/cart.php';
+require __DIR__.'/app/product_presenter.php';
 require __DIR__.'/includes/layout.php';
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (empty($_SESSION['_cart_csrf'])) $_SESSION['_cart_csrf'] = bin2hex(random_bytes(24));
@@ -20,7 +21,7 @@ try {
 
 $shots=[];
 try {
-    $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY ID');
+    $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());
     $q->execute([$id]);
     $shots=$q->fetchAll();
 } catch(Throwable) {}
