@@ -1,5 +1,6 @@
 <?php
 require __DIR__.'/includes/layout.php';
+require __DIR__.'/../app/product_presenter.php';
 
 $id=(int)($_GET['id']??0);
 $q=db()->prepare('SELECT * FROM csSoftProducts WHERE ID=?');
@@ -16,7 +17,9 @@ function asset_db_text(string $value): string {
 function asset_safe_name(string $name): string {
     $ext=strtolower(pathinfo($name,PATHINFO_EXTENSION));
     $base=pathinfo($name,PATHINFO_FILENAME);
-    $base=preg_replace('/[^A-Za-z0-9._-]+/','-',transliterator_transliterate('Any-Latin; Latin-ASCII',$base) ?: $base);
+    $latin=function_exists('transliterator_transliterate')?transliterator_transliterate('Any-Latin; Latin-ASCII',$base):@iconv('UTF-8','ASCII//TRANSLIT//IGNORE',$base);
+    if(!is_string($latin)||$latin==='')$latin=$base;
+    $base=preg_replace('/[^A-Za-z0-9._-]+/','-',$latin);
     $base=trim((string)$base,'-_.');
     if($base==='') $base='file';
     return $base.'-'.date('Ymd-His').'-'.bin2hex(random_bytes(3)).($ext!==''?'.'.$ext:'');
@@ -92,7 +95,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $photosPath=(string)cfg2('site.photos_path',__DIR__.'/../photos');
             $full=asset_upload($_FILES['shot'],$photosPath);
             $thumb=asset_make_thumb($photosPath,$full);
-            db()->prepare('INSERT INTO csSoftShots (SoftProductID,Name,FileFull,FileThumb) VALUES (?,?,?,?)')->execute([$id,asset_db_text((string)($_POST['title']??'')),asset_db_text($full),asset_db_text($thumb)]);
+            $sortColumn=product_shots_order_column();
+            if($sortColumn!==null){
+                $safeSort='`'.str_replace('`','',$sortColumn).'`';
+                $nextQ=db()->prepare('SELECT COALESCE(MAX('.$safeSort.'),0)+1 FROM csSoftShots WHERE SoftProductID=?');
+                $nextQ->execute([$id]);
+                $next=(int)$nextQ->fetchColumn();
+                db()->prepare('INSERT INTO csSoftShots (SoftProductID,Name,FileFull,FileThumb,'.$safeSort.') VALUES (?,?,?,?,?)')->execute([$id,asset_db_text((string)($_POST['title']??'')),asset_db_text($full),asset_db_text($thumb),$next]);
+            }else{
+                db()->prepare('INSERT INTO csSoftShots (SoftProductID,Name,FileFull,FileThumb) VALUES (?,?,?,?)')->execute([$id,asset_db_text((string)($_POST['title']??'')),asset_db_text($full),asset_db_text($thumb)]);
+            }
         }elseif($action==='shot_delete'&&$asset){
             db()->prepare('DELETE FROM csSoftShots WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);
         }
@@ -103,7 +115,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 $files=[];$prices=[];$shots=[];
 try{$q=db()->prepare('SELECT * FROM csSoftDownloads WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$files=$q->fetchAll();}catch(Throwable){}
 try{$q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$prices=$q->fetchAll();}catch(Throwable){}
-try{$q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$shots=$q->fetchAll();}catch(Throwable){}
+try{$q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());$q->execute([$id]);$shots=$q->fetchAll();}catch(Throwable){}
 
 admin_header('Ресурсы: '.a_legacy($p['Name']));
 if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
@@ -116,7 +128,7 @@ if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 
 <div class="card" style="margin-top:18px"><h2>Цены</h2><div class="table-wrap"><table class="table"><thead><tr><th>Название</th><th>Цена</th><th></th></tr></thead><tbody><?php foreach($prices as $pr): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><input type="hidden" name="asset_id" value="<?=$pr['ID']?>"><td><input class="input" name="title" value="<?=aesc(a_legacy($pr['Title']??''))?>"></td><td><input class="input" name="price" inputmode="decimal" value="<?=aesc((string)($pr['Price']??''))?>"></td><td><div class="actions"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="price_delete" onclick="return confirm('Удалить цену?')">Удалить</button></div></td></form></tr><?php endforeach; ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><td><input class="input" name="title" placeholder="Название лицензии"></td><td><input class="input" name="price" inputmode="decimal" value="0"></td><td><button class="btn primary">Добавить</button></td></form></tr></tbody></table></div></div>
 
-<div class="card" style="margin-top:18px"><div class="section-title"><div><h2>Скриншоты</h2><div class="help">В админке показывается полноразмерное изображение, чтобы старые миниатюры не растягивались и не выглядели размытыми. Новые изображения загружаются в photos; миниатюра создаётся автоматически, если на сервере доступен GD.</div></div></div><div class="shot-grid"><?php foreach($shots as $s): ?><?php $full=a_legacy((string)($s['FileFull']??'')); $thumb=a_legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; ?><form method="post" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_save"><input type="hidden" name="asset_id" value="<?=$s['ID']?>"><?php if($preview!==''): ?><a class="shot-preview" href="<?=aesc(asset_photo_url($preview))?>" target="_blank"><img src="<?=aesc(asset_photo_url($preview))?>" alt=""></a><div class="help" style="margin-bottom:8px"><?=aesc($preview)?></div><?php else: ?><div class="shot-preview empty">Нет изображения</div><?php endif; ?><input class="input" name="title" value="<?=aesc(a_legacy($s['Name']??''))?>" placeholder="Название"><div class="actions" style="margin-top:10px"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="shot_delete" onclick="return confirm('Удалить запись о скриншоте?')">Удалить</button></div></form><?php endforeach; ?><form method="post" enctype="multipart/form-data" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_add"><div class="upload-box">Новый скриншот</div><input class="input" name="title" placeholder="Название"><input type="file" name="shot" accept="image/jpeg,image/png,image/gif,image/webp" required style="margin-top:10px"><button class="btn primary" style="margin-top:10px">Загрузить</button></form></div></div>
+<div class="card" style="margin-top:18px"><div class="section-title"><div><h2>Скриншоты</h2><div class="help">Порядок совпадает со старой сортировкой сайта: первая запись используется как картинка программы в списках. Новые скриншоты автоматически добавляются в конец. В админке показывается полноразмерное изображение.</div></div></div><div class="shot-grid"><?php foreach($shots as $s): ?><?php $full=a_legacy((string)($s['FileFull']??'')); $thumb=a_legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; ?><form method="post" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_save"><input type="hidden" name="asset_id" value="<?=$s['ID']?>"><?php if($preview!==''): ?><a class="shot-preview" href="<?=aesc(asset_photo_url($preview))?>" target="_blank"><img src="<?=aesc(asset_photo_url($preview))?>" alt=""></a><div class="help" style="margin-bottom:8px"><?=aesc($preview)?></div><?php else: ?><div class="shot-preview empty">Нет изображения</div><?php endif; ?><input class="input" name="title" value="<?=aesc(a_legacy($s['Name']??''))?>" placeholder="Название"><div class="actions" style="margin-top:10px"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="shot_delete" onclick="return confirm('Удалить запись о скриншоте?')">Удалить</button></div></form><?php endforeach; ?><form method="post" enctype="multipart/form-data" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_add"><div class="upload-box">Новый скриншот</div><input class="input" name="title" placeholder="Название"><input type="file" name="shot" accept="image/jpeg,image/png,image/gif,image/webp" required style="margin-top:10px"><button class="btn primary" style="margin-top:10px">Загрузить</button></form></div></div>
 
 <div class="actions" style="margin-top:18px;justify-content:flex-start"><a class="btn" href="product-edit.php?id=<?=$id?>">← К продукту</a><a class="btn" href="../product.php?id=<?=$id?>" target="_blank">Открыть на сайте ↗</a></div>
 <?php admin_footer();
