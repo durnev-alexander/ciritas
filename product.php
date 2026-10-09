@@ -37,13 +37,12 @@ render_header(legacy($p['Name']));
 <h1><?=htmlspecialchars(legacy($p['Name']))?></h1>
 <p class="lead"><?=nl2br(htmlspecialchars(legacy($p['ShortDescr']??'')))?></p>
 
-<div class="product-actions"><a class="btn" href="cart.php">Корзина</a></div>
 <div class="content-card"><?=legacy($p['About']??'')?></div>
 
 <?php if(!empty($p['Features'])): ?><div class="content-card"><h2>Возможности</h2><?=legacy($p['Features'])?></div><?php endif; ?>
 
 <?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
-<?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$thumb!==''?$thumb:$full; if($preview==='') continue; ?>
+<?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; ?>
 <a class="product-shot" href="<?=htmlspecialchars(product_photo_url($full!==''?$full:$preview))?>" target="_blank" rel="noopener"><img src="<?=htmlspecialchars(product_photo_url($preview))?>" alt="<?=htmlspecialchars(legacy((string)($s['Name']??'')))?>"><?php if(!empty($s['Name'])): ?><span><?=htmlspecialchars(legacy((string)$s['Name']))?></span><?php endif; ?></a>
 <?php endforeach; ?>
 </div></div><?php endif; ?>
