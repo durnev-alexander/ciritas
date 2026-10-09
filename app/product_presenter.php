@@ -1,12 +1,12 @@
 <?php
 
-function product_list_text(?string $value): string {
-    $text = legacy($value ?? '');
-    if ($text === '') return '';
-    if (str_contains($text, '&lt;') || str_contains($text, '&gt;')) {
-        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+function product_list_html(?string $value): string {
+    $html = legacy($value ?? '');
+    if ($html === '') return '';
+    if (str_contains($html, '&lt;') || str_contains($html, '&gt;')) {
+        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
-    return trim(preg_replace('/\s+/u', ' ', strip_tags($text)) ?? '');
+    return $html;
 }
 
 function product_shots_order_column(): ?string {
@@ -59,7 +59,6 @@ function product_image_url(array $product): string {
             $shot = $q->fetch();
             if ($shot) {
                 // На старом сайте первой в сортировке идёт загрузочная картинка продукта.
-                // Для современного списка берём её полноразмерный вариант, не растягивая CSS-ом.
                 $file = trim(legacy((string)($shot['FileFull'] ?: $shot['FileThumb'] ?: '')));
                 if ($file !== '') {
                     $shotCache[$id] = rtrim((string)cfg('site.photos_url','/photos/'),'/').'/'.rawurlencode($file);
@@ -73,7 +72,7 @@ function product_image_url(array $product): string {
 function render_product_list_card(array $product, string $headingTag='h2'): void {
     $id=(int)($product['ID']??0);
     $name=legacy((string)($product['Name']??''));
-    $description=product_list_text($product['ShortDescr']??'');
+    $description=product_list_html($product['ShortDescr']??'');
     $image=product_image_url($product);
     $tag=in_array($headingTag,['h2','h3'],true)?$headingTag:'h2';
     ?>
@@ -82,7 +81,7 @@ function render_product_list_card(array $product, string $headingTag='h2'): void
         <div class="product-list-body<?=$image===''?' no-image':''?>">
             <?php if($image!==''): ?><div class="product-list-image"><img src="<?=htmlspecialchars($image,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" alt="<?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"></div><?php endif; ?>
             <div class="product-list-copy">
-                <?php if($description!==''): ?><p><?=htmlspecialchars($description,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></p><?php endif; ?>
+                <?php if($description!==''): ?><div class="product-list-html"><?=$description?></div><?php endif; ?>
                 <a class="product-more" href="product.php?id=<?=$id?>">Подробнее...</a>
             </div>
         </div>
