@@ -9,63 +9,65 @@ function product_list_text(?string $value): string {
     return trim(preg_replace('/\s+/u', ' ', strip_tags($text)) ?? '');
 }
 
+function product_shots_order_column(): ?string {
+    static $resolved = false;
+    static $column = null;
+    if ($resolved) return $column;
+    $resolved = true;
+    try {
+        $cols = db()->query('SHOW COLUMNS FROM csSoftShots')->fetchAll();
+        $names = [];
+        foreach ($cols as $col) {
+            $name = (string)($col['Field'] ?? '');
+            if ($name !== '') $names[] = $name;
+        }
+        foreach (['OrderIndex','SortOrder','SortIndex','Position','OrderNum','OrderID','Sort'] as $candidate) {
+            foreach ($names as $name) {
+                if (strcasecmp($name, $candidate) === 0) {
+                    $column = $name;
+                    return $column;
+                }
+            }
+        }
+        foreach ($names as $name) {
+            if (in_array(strtolower($name), ['id','softproductid'], true)) continue;
+            if (preg_match('/(order|sort|position|index)/i', $name)) {
+                $column = $name;
+                return $column;
+            }
+        }
+    } catch (Throwable) {}
+    return null;
+}
+
+function product_shots_order_sql(): string {
+    $column = product_shots_order_column();
+    return $column !== null ? '`'.str_replace('`','',$column).'`, ID' : 'ID';
+}
+
 function product_image_url(array $product): string {
-    $preferred = [
-        'Image', 'ImageFile', 'ImageName', 'Picture', 'PictureFile', 'Logo', 'LogoFile',
-        'Img', 'Photo', 'PhotoFile', 'ImageSmall', 'SmallImage', 'Icon', 'IconFile'
-    ];
-    $candidates = [];
-    foreach ($preferred as $field) {
-        if (array_key_exists($field, $product) && trim((string)$product[$field]) !== '') {
-            $candidates[] = (string)$product[$field];
-        }
-    }
-    foreach ($product as $field => $value) {
-        if (!is_scalar($value) || trim((string)$value) === '') continue;
-        if (preg_match('/(image|img|picture|logo|photo|icon|pic)/i', (string)$field)) {
-            $candidates[] = (string)$value;
-        }
-    }
-
-    foreach (array_unique($candidates) as $raw) {
-        $value = trim(legacy($raw));
-        if ($value === '') continue;
-        if (preg_match("~<img[^>]+src=[\"']([^\"']+)[\"']~i", $value, $m)) $value = $m[1];
-        if (preg_match('~^https?://~i', $value) || str_starts_with($value, '//')) return $value;
-        if (str_starts_with($value, '/')) return $value;
-
-        $value = ltrim(str_replace('\\', '/', $value), '/');
-        $root = dirname(__DIR__);
-        $paths = [
-            [$root.'/'.$value, '/'.$value],
-            [$root.'/images/'.$value, '/images/'.$value],
-            [$root.'/Images/'.$value, '/Images/'.$value],
-            [$root.'/img/'.$value, '/img/'.$value],
-            [(string)cfg('site.photos_path').'/'.$value, rtrim((string)cfg('site.photos_url','/photos/'),'/').'/'.$value],
-        ];
-        foreach ($paths as [$file, $url]) {
-            if (is_file($file)) return $url;
-        }
-    }
-
     static $shotCache = [];
     $id = (int)($product['ID'] ?? 0);
-    if ($id > 0) {
-        if (!array_key_exists($id, $shotCache)) {
-            $shotCache[$id] = '';
-            try {
-                $q = db()->prepare('SELECT FileThumb,FileFull FROM csSoftShots WHERE SoftProductID=? ORDER BY ID LIMIT 1');
-                $q->execute([$id]);
-                $shot = $q->fetch();
-                if ($shot) {
-                    $file = trim(legacy((string)($shot['FileFull'] ?: $shot['FileThumb'] ?: '')));
-                    if ($file !== '') $shotCache[$id] = rtrim((string)cfg('site.photos_url','/photos/'),'/').'/'.rawurlencode($file);
+    if ($id < 1) return '';
+
+    if (!array_key_exists($id, $shotCache)) {
+        $shotCache[$id] = '';
+        try {
+            $sql = 'SELECT FileThumb,FileFull FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql().' LIMIT 1';
+            $q = db()->prepare($sql);
+            $q->execute([$id]);
+            $shot = $q->fetch();
+            if ($shot) {
+                // На старом сайте первой в сортировке идёт загрузочная картинка продукта.
+                // Для современного списка берём её полноразмерный вариант, не растягивая CSS-ом.
+                $file = trim(legacy((string)($shot['FileFull'] ?: $shot['FileThumb'] ?: '')));
+                if ($file !== '') {
+                    $shotCache[$id] = rtrim((string)cfg('site.photos_url','/photos/'),'/').'/'.rawurlencode($file);
                 }
-            } catch (Throwable) {}
-        }
-        return $shotCache[$id];
+            }
+        } catch (Throwable) {}
     }
-    return '';
+    return $shotCache[$id];
 }
 
 function render_product_list_card(array $product, string $headingTag='h2'): void {
