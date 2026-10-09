@@ -30,7 +30,7 @@ function product_image_url(array $product): string {
     foreach (array_unique($candidates) as $raw) {
         $value = trim(legacy($raw));
         if ($value === '') continue;
-        if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/i', $value, $m)) $value = $m[1];
+        if (preg_match("~<img[^>]+src=[\"']([^\"']+)[\"']~i", $value, $m)) $value = $m[1];
         if (preg_match('~^https?://~i', $value) || str_starts_with($value, '//')) return $value;
         if (str_starts_with($value, '/')) return $value;
 
