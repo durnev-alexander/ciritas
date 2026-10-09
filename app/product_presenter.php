@@ -67,3 +67,23 @@ function product_image_url(array $product): string {
     }
     return '';
 }
+
+function render_product_list_card(array $product, string $headingTag='h2'): void {
+    $id=(int)($product['ID']??0);
+    $name=legacy((string)($product['Name']??''));
+    $description=product_list_text($product['ShortDescr']??'');
+    $image=product_image_url($product);
+    $tag=in_array($headingTag,['h2','h3'],true)?$headingTag:'h2';
+    ?>
+    <article class="product-list-card">
+        <<?=$tag?> class="product-list-title"><?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></<?=$tag?>>
+        <div class="product-list-body<?=$image===''?' no-image':''?>">
+            <?php if($image!==''): ?><div class="product-list-image"><img src="<?=htmlspecialchars($image,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" alt="<?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"></div><?php endif; ?>
+            <div class="product-list-copy">
+                <?php if($description!==''): ?><p><?=htmlspecialchars($description,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></p><?php endif; ?>
+                <a class="product-more" href="product.php?id=<?=$id?>">Подробнее...</a>
+            </div>
+        </div>
+    </article>
+    <?php
+}
