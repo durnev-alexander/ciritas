@@ -30,16 +30,33 @@ function product_photo_url(string $file): string {
     return $base.rawurlencode($file);
 }
 
+function product_html(?string $value): string {
+    $html = legacy($value ?? '');
+    if ($html === '') return '';
+
+    // Часть старых записей хранит HTML-теги как сущности (&lt;...&gt;).
+    // Декодируем их, чтобы на новом сайте применялось исходное форматирование.
+    if (str_contains($html, '&lt;') || str_contains($html, '&gt;')) {
+        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    return $html;
+}
+
+$shortDescr = product_html($p['ShortDescr'] ?? '');
+$about = product_html($p['About'] ?? '');
+$features = product_html($p['Features'] ?? '');
+
 render_header(legacy($p['Name']));
 ?>
 <section class="section"><div class="container">
 <a href="products.php">← Все продукты</a>
 <h1><?=htmlspecialchars(legacy($p['Name']))?></h1>
-<p class="lead"><?=nl2br(htmlspecialchars(legacy($p['ShortDescr']??'')))?></p>
+<?php if($shortDescr!==''): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
 
-<div class="content-card"><?=legacy($p['About']??'')?></div>
+<?php if($about!==''): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
 
-<?php if(!empty($p['Features'])): ?><div class="content-card"><h2>Возможности</h2><?=legacy($p['Features'])?></div><?php endif; ?>
+<?php if($features!==''): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
 
 <?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
 <?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; ?>
