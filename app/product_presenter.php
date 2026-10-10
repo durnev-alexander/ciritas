@@ -45,6 +45,33 @@ function product_shots_order_sql(): string {
     return $column !== null ? '`'.str_replace('`','',$column).'`, ID' : 'ID';
 }
 
+function product_photo_asset_url(string $file): string {
+    $file = trim(legacy($file));
+    if ($file === '') return '';
+
+    $isHttps = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
+        || (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+
+    // Некоторые старые записи могут уже содержать абсолютный URL.
+    if (preg_match('~^https?://~i', $file)) {
+        if ($isHttps && str_starts_with(strtolower($file), 'http://')) {
+            $file = 'https://'.substr($file, 7);
+        }
+        return $file;
+    }
+
+    $base = trim((string)cfg('site.photos_url','/photos/'));
+    if ($base === '') $base = '/photos/';
+    if ($isHttps && str_starts_with(strtolower($base), 'http://')) {
+        $base = 'https://'.substr($base, 7);
+    }
+
+    // Кодируем сегменты отдельно, сохраняя подпапки в старых путях.
+    $path = str_replace('\\','/',$file);
+    $segments = array_map('rawurlencode', array_filter(explode('/', ltrim($path,'/')), static fn($v) => $v !== ''));
+    return rtrim($base,'/').'/'.implode('/',$segments);
+}
+
 function product_image_url(array $product): string {
     static $shotCache = [];
     $id = (int)($product['ID'] ?? 0);
@@ -61,7 +88,7 @@ function product_image_url(array $product): string {
                 // На старом сайте первой в сортировке идёт загрузочная картинка продукта.
                 $file = trim(legacy((string)($shot['FileFull'] ?: $shot['FileThumb'] ?: '')));
                 if ($file !== '') {
-                    $shotCache[$id] = rtrim((string)cfg('site.photos_url','/photos/'),'/').'/'.rawurlencode($file);
+                    $shotCache[$id] = product_photo_asset_url($file);
                 }
             }
         } catch (Throwable) {}
