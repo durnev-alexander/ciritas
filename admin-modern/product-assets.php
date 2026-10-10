@@ -52,8 +52,7 @@ function asset_make_thumb(string $dir,string $fullName): string {
     return $saved?$thumb:$fullName;
 }
 function asset_photo_url(string $file): string {
-    $base=rtrim((string)cfg2('site.photos_url','/photos/'),'/').'/';
-    return $base.rawurlencode($file);
+    return product_photo_asset_url($file);
 }
 
 $error='';
@@ -115,7 +114,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 $files=[];$prices=[];$shots=[];
 try{$q=db()->prepare('SELECT * FROM csSoftDownloads WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$files=$q->fetchAll();}catch(Throwable){}
 try{$q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$prices=$q->fetchAll();}catch(Throwable){}
-try{$q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());$q->execute([$id]);$shots=$q->fetchAll();}catch(Throwable){}
+try{
+    $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());
+    $q->execute([$id]);
+    $shots=$q->fetchAll();
+}catch(Throwable){
+    try{$q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$shots=$q->fetchAll();}catch(Throwable){}
+}
 
 admin_header('Ресурсы: '.a_legacy($p['Name']));
 if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
