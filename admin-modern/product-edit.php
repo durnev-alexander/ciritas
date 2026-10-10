@@ -68,9 +68,10 @@ admin_header($id?'Редактирование продукта':'Новый п�
 <div class="field"><label class="label">Группа</label><select class="select" name="group" required><?php foreach($groups as $g): ?><option value="<?=$g['ID']?>" <?=$row['SoftGroupID']==$g['ID']?'selected':''?>><?=aesc(a_legacy($g['Name']))?></option><?php endforeach; ?></select></div>
 <?php if($columns['OrderIndex']): ?><div class="field"><label class="label">Порядок</label><input class="input" type="number" name="orderIndex" value="<?=(int)($row['OrderIndex']??0)?>"></div><?php endif; ?>
 <div class="field"><label class="checkbox"><input type="checkbox" name="active" <?=$row['IsActive']?'checked':''?>> Активен на сайте</label><?php if($columns['OrderAllow']): ?><label class="checkbox"><input type="checkbox" name="orderAllow" <?=!empty($row['OrderAllow'])?'checked':''?>> Разрешить оформление заказа</label><?php endif; ?></div>
-<div class="field full"><label class="label">Краткое описание</label><textarea class="textarea" name="shortDescr" rows="3"><?=aesc(a_legacy($row['ShortDescr']??''))?></textarea></div>
+<div class="field full"><label class="label">Краткое описание (HTML)</label><textarea class="textarea html-editor" name="shortDescr" rows="5"><?=aesc(a_legacy($row['ShortDescr']??''))?></textarea></div>
 <?php if($columns['PriceDescr']): ?><div class="field full"><label class="label">Описание цены</label><textarea class="textarea" name="priceDescr" rows="3"><?=aesc(a_legacy($row['PriceDescr']??''))?></textarea></div><?php endif; ?>
-<div class="field full"><label class="label">О программе (HTML)</label><textarea class="textarea" name="about" rows="10"><?=aesc(a_legacy($row['About']??''))?></textarea></div>
-<div class="field full"><label class="label">Возможности (HTML)</label><textarea class="textarea" name="features" rows="8"><?=aesc(a_legacy($row['Features']??''))?></textarea></div>
+<div class="field full"><label class="label">О программе (HTML)</label><textarea class="textarea html-editor" name="about" rows="10"><?=aesc(a_legacy($row['About']??''))?></textarea></div>
+<div class="field full"><label class="label">Возможности (HTML)</label><textarea class="textarea html-editor" name="features" rows="8"><?=aesc(a_legacy($row['Features']??''))?></textarea></div>
 </div><div class="actions product-edit-actions" style="margin-top:20px"><button class="btn primary">Сохранить</button><?php if($id): ?><a class="btn" href="product-assets.php?id=<?=$id?>">Файлы, скриншоты и цены</a><?php else: ?><span class="btn" aria-disabled="true" style="opacity:.4;pointer-events:none">Файлы, скриншоты и цены</span><?php endif; ?><a class="btn product-edit-back" href="products.php">Отмена</a></div></form></div>
+<script src="assets/js/html-editor.js"></script>
 <?php admin_footer();
