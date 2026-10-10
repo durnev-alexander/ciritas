@@ -1,4 +1,3 @@
 <?php
-require __DIR__.'/../bootstrap.php';
-admin_require_login();
+require __DIR__.'/includes/layout.php';
 redirect('products.php');
