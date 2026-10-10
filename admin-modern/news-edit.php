@@ -52,8 +52,8 @@ admin_header($id?'Редактирование новости':'Новая но�
 <div class="field"><label>Дата</label><input class="input" type="text" name="news_date" value="<?=aesc(a_legacy((string)($row['NewsDate']??'')))?>"></div>
 <div class="field"><label><input type="checkbox" name="is_publish" <?=!empty($row['IsPublish'])?'checked':''?>> Опубликована</label></div>
 <div class="field full"><label>Заголовок</label><input class="input" name="title" required value="<?=aesc(a_legacy((string)($row['Title']??'')))?>"></div>
-<div class="field full"><label>Краткий текст (HTML)</label><textarea class="textarea" rows="8" name="short_descr"><?=aesc(a_legacy((string)($row['ShortDescr']??'')))?></textarea></div>
-<div class="field full"><label>Полный текст (HTML)</label><textarea class="textarea" rows="14" name="full_descr"><?=aesc(a_legacy((string)($row['FullDescr']??'')))?></textarea></div>
+<div class="field full"><label>Краткий текст (HTML)</label><textarea class="textarea html-editor" rows="8" name="short_descr"><?=aesc(a_legacy((string)($row['ShortDescr']??'')))?></textarea></div>
+<div class="field full"><label>Полный текст (HTML)</label><textarea class="textarea html-editor" rows="14" name="full_descr"><?=aesc(a_legacy((string)($row['FullDescr']??'')))?></textarea></div>
 <div class="field"><label>Фото — полный файл</label><input class="input" name="photo_full" value="<?=aesc(a_legacy((string)($row['PhotoFull']??'')))?>"></div>
 <div class="field"><label>Фото — миниатюра</label><input class="input" name="photo_thumb" value="<?=aesc(a_legacy((string)($row['PhotoThumb']??'')))?>"></div>
 </div>
@@ -61,4 +61,5 @@ admin_header($id?'Редактирование новости':'Новая но�
 <div class="actions"><button class="btn primary" type="submit">Сохранить</button><a class="btn" href="news.php">Отмена</a></div>
 </form>
 </div>
+<script src="assets/js/html-editor.js"></script>
 <?php admin_footer();
