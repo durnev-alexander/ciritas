@@ -62,24 +62,16 @@ admin_header('Продукты');
 <?php if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 <div class="card">
 <div class="toolbar">
-    <div><h2>Список программ</h2><div class="help">Все программы из базы данных. Инструменты управления расположены ниже списка.</div></div>
+    <div><h2>Список программ</h2><div class="help">Все программы из базы данных.</div></div>
     <div class="admin-products-summary">Всего: <?=count($rows)?></div>
 </div>
-<div class="toolbar">
-    <input id="productSearch" class="input" type="search" placeholder="Поиск по названию..." style="max-width:360px">
-    <select id="productGroupFilter" class="select" style="max-width:280px"><option value="">Все группы</option><?php foreach($groups as $g): ?><option value="<?=aesc(mb_strtolower($g,'UTF-8'))?>"><?=aesc($g)?></option><?php endforeach; ?></select>
+<div class="toolbar products-filter-row">
+    <select id="productGroupFilter" class="select products-group-filter"><option value="">Все группы</option><?php foreach($groups as $g): ?><option value="<?=aesc(mb_strtolower($g,'UTF-8'))?>"><?=aesc($g)?></option><?php endforeach; ?></select>
+    <input id="productSearch" class="input products-search" type="search" placeholder="Поиск по названию...">
+    <a class="btn primary products-add-button" href="product-edit.php">+ Добавить продукт</a>
 </div>
 <div class="table-wrap"><table class="table" id="productsTable"><thead><tr><?php if(column_exists('csSoftProducts','OrderIndex')): ?><th>Порядок</th><?php endif; ?><th>Продукт</th><th>Группа</th><th>Статус</th><?php if(column_exists('csSoftProducts','OrderAllow')): ?><th>Заказ</th><?php endif; ?><th>Действия</th></tr></thead><tbody>
 <?php foreach($rows as $r): $name=a_legacy((string)$r['Name']);$group=a_legacy((string)($r['GroupName']??'')); ?><tr data-name="<?=aesc(mb_strtolower($name,'UTF-8'))?>" data-group="<?=aesc(mb_strtolower($group,'UTF-8'))?>"><?php if(array_key_exists('OrderIndex',$r)): ?><td><?=(int)$r['OrderIndex']?></td><?php endif; ?><td><b><?=aesc($name)?></b><div class="help"><?=aesc(a_legacy($r['ShortDescr']??''))?></div></td><td><?=aesc($group)?></td><td><span class="badge <?=$r['IsActive']?'on':'off'?>"><?=$r['IsActive']?'Активен':'Скрыт'?></span></td><?php if(array_key_exists('OrderAllow',$r)): ?><td><span class="badge <?=$r['OrderAllow']?'on':'off'?>"><?=$r['OrderAllow']?'Разрешён':'Запрещён'?></span></td><?php endif; ?><td><div class="actions"><a class="btn" href="product-edit.php?id=<?=$r['ID']?>">Изменить</a><a class="btn" href="product-assets.php?id=<?=$r['ID']?>">Ресурсы</a></div></td></tr><?php endforeach; ?></tbody></table></div>
-</div>
-
-<div class="card">
-<div class="section-title"><div><h2>Дополнительные инструменты</h2><div class="help">Все действия с каталогом собраны ниже списка программ.</div></div></div>
-<div class="admin-product-tools">
-<a class="admin-tool-card" href="product-edit.php"><span class="admin-tool-icon">＋</span><span><strong>Добавить программу</strong><span>Создание новой карточки продукта</span></span></a>
-<a class="admin-tool-card" href="groups.php"><span class="admin-tool-icon">▦</span><span><strong>Группы</strong><span>Управление группами продуктов</span></span></a>
-<a class="admin-tool-card" href="#home-products"><span class="admin-tool-icon">↕</span><span><strong>Главная страница</strong><span>Состав и порядок основных продуктов</span></span></a>
-</div>
 </div>
 
 <div id="home-products" class="card products-tools-card">
