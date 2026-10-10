@@ -5,11 +5,18 @@ $columns=[]; foreach(['PriceDescr','OrderAllow','OrderIndex'] as $c){$columns[$c
 $groups=db()->query('SELECT ID,Name FROM csSoftGroups ORDER BY Name')->fetchAll();
 $row=['SoftGroupID'=>'','Name'=>'','ShortDescr'=>'','About'=>'','Features'=>'','IsActive'=>1,'OrderAllow'=>0,'PriceDescr'=>'','OrderIndex'=>0];
 if($id){$q=db()->prepare('SELECT * FROM csSoftProducts WHERE ID=?');$q->execute([$id]);$row=$q->fetch()?:$row;}
+
+function product_admin_name_key(string $value): string {
+    $value=trim(preg_replace('/\s+/u',' ',$value)??$value);
+    return function_exists('mb_strtolower')?mb_strtolower($value,'UTF-8'):strtolower($value);
+}
+
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_check();
+    $rawName=trim((string)($_POST['name']??''));
     $data=[
         'SoftGroupID'=>(int)($_POST['group']??0),
-        'Name'=>admin_db_text(trim((string)($_POST['name']??''))),
+        'Name'=>admin_db_text($rawName),
         'ShortDescr'=>admin_db_text((string)($_POST['shortDescr']??'')),
         'About'=>admin_db_text((string)($_POST['about']??'')),
         'Features'=>admin_db_text((string)($_POST['features']??'')),
@@ -18,12 +25,24 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($columns['PriceDescr'])$data['PriceDescr']=admin_db_text((string)($_POST['priceDescr']??''));
     if($columns['OrderAllow'])$data['OrderAllow']=isset($_POST['orderAllow'])?1:0;
     if($columns['OrderIndex'])$data['OrderIndex']=(int)($_POST['orderIndex']??0);
-    if(trim((string)($_POST['name']??''))===''){ $error='Укажите название продукта.'; }
-    else{
-        $names=array_keys($data);$params=array_values($data);
-        if($id){$set=implode(',',array_map(fn($n)=>'`'.$n.'`=?',$names));$params[]=$id;db()->prepare('UPDATE csSoftProducts SET '.$set.' WHERE ID=?')->execute($params);}
-        else{$quoted=implode(',',array_map(fn($n)=>'`'.$n.'`',$names));$marks=implode(',',array_fill(0,count($names),'?'));db()->prepare('INSERT INTO csSoftProducts ('.$quoted.') VALUES ('.$marks.')')->execute($params);$id=(int)db()->lastInsertId();}
-        redirect('product-edit.php?id='.$id.'&saved=1');
+    if($rawName===''){
+        $error='Укажите название продукта.';
+    }else{
+        $duplicate=false;
+        $nameKey=product_admin_name_key($rawName);
+        $q=db()->prepare('SELECT ID,Name FROM csSoftProducts WHERE ID<>?');
+        $q->execute([$id]);
+        foreach($q->fetchAll() as $existing){
+            if(product_admin_name_key(a_legacy((string)($existing['Name']??'')))===$nameKey){$duplicate=true;break;}
+        }
+        if($duplicate){
+            $error=$id?'Сохранение запрещено: продукт с таким названием уже существует.':'Добавление запрещено: продукт с таким названием уже существует.';
+        }else{
+            $names=array_keys($data);$params=array_values($data);
+            if($id){$set=implode(',',array_map(fn($n)=>'`'.$n.'`=?',$names));$params[]=$id;db()->prepare('UPDATE csSoftProducts SET '.$set.' WHERE ID=?')->execute($params);}
+            else{$quoted=implode(',',array_map(fn($n)=>'`'.$n.'`',$names));$marks=implode(',',array_fill(0,count($names),'?'));db()->prepare('INSERT INTO csSoftProducts ('.$quoted.') VALUES ('.$marks.')')->execute($params);$id=(int)db()->lastInsertId();}
+            redirect('product-edit.php?id='.$id.'&saved=1');
+        }
     }
 }
 admin_header($id?'Редактирование продукта':'Новый продукт');
