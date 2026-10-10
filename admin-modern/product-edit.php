@@ -28,9 +28,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 admin_header($id?'Редактирование продукта':'Новый продукт');
 ?>
+<?php if(!empty($_GET['saved'])) admin_notice('Продукт сохранён.','success'); ?>
+<?php if(!empty($error)) admin_notice($error,'error'); ?>
 <div class="card">
-<?php if(!empty($_GET['saved'])): ?><div class="alert success">Продукт сохранён.</div><?php endif; ?>
-<?php if(!empty($error)): ?><div class="alert error"><?=aesc($error)?></div><?php endif; ?>
 <form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><div class="form-grid">
 <div class="field"><label class="label">Название</label><input class="input" name="name" required value="<?=aesc(a_legacy($row['Name']??''))?>"></div>
 <div class="field"><label class="label">Группа</label><select class="select" name="group" required><?php foreach($groups as $g): ?><option value="<?=$g['ID']?>" <?=$row['SoftGroupID']==$g['ID']?'selected':''?>><?=aesc(a_legacy($g['Name']))?></option><?php endforeach; ?></select></div>
