@@ -36,6 +36,34 @@ function products_admin_delete_blocked(array $row): bool {
     return false;
 }
 
+function products_admin_sort_column(string $table): ?string {
+    try {
+        $cols=db()->query('SHOW COLUMNS FROM `'.str_replace('`','',$table).'`')->fetchAll();
+        $names=[];
+        foreach($cols as $col){
+            $name=(string)($col['Field']??'');
+            if($name!=='') $names[]=$name;
+        }
+        foreach(['OrderIndex','SortOrder','SortIndex','Position','OrderNum','OrderID','Sort','Order'] as $candidate){
+            foreach($names as $name){
+                if(strcasecmp($name,$candidate)===0) return $name;
+            }
+        }
+        foreach($names as $name){
+            if(in_array(strtolower($name),['id','softgroupid','softproductid'],true)) continue;
+            if(preg_match('/(order|sort|position|index)/i',$name)) return $name;
+        }
+    } catch(Throwable) {}
+    return null;
+}
+
+function products_admin_order_part(string $alias, ?string $column, string $fallback): string {
+    if($column!==null){
+        return $alias.'.`'.str_replace('`','',$column).'`, '.$alias.'.ID';
+    }
+    return $alias.'.`'.str_replace('`','',$fallback).'`, '.$alias.'.ID';
+}
+
 if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['product_action'])){
     csrf_check();
     try{
@@ -87,7 +115,9 @@ if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['home_action'])){
     }catch(Throwable $e){$error=$e->getMessage();}
 }
 
-$order=column_exists('csSoftProducts','OrderIndex')?'p.OrderIndex,p.ID':'p.ID DESC';
+$groupOrder=products_admin_sort_column('csSoftGroups');
+$productOrder=products_admin_sort_column('csSoftProducts');
+$order=products_admin_order_part('g',$groupOrder,'Name').', '.products_admin_order_part('p',$productOrder,'Name');
 $rows=db()->query('SELECT p.*,g.Name GroupName FROM csSoftProducts p LEFT JOIN csSoftGroups g ON g.ID=p.SoftGroupID ORDER BY '.$order)->fetchAll();
 $current=db()->query('SELECT h.ID,h.SoftProductID,h.SortOrder,p.Name,p.IsActive FROM csHomeProducts h JOIN csSoftProducts p ON p.ID=h.SoftProductID ORDER BY h.SortOrder,h.ID')->fetchAll();
 $available=db()->query('SELECT p.ID,p.Name,p.IsActive FROM csSoftProducts p LEFT JOIN csHomeProducts h ON h.SoftProductID=p.ID WHERE h.ID IS NULL ORDER BY p.Name')->fetchAll();
@@ -109,8 +139,8 @@ admin_header('Продукты');
     <input id="productSearch" class="input products-search" type="search" placeholder="Поиск по названию...">
     <a class="btn primary products-add-button" href="product-edit.php">+ Добавить продукт</a>
 </div>
-<div class="table-wrap"><table class="table" id="productsTable"><thead><tr><th>ID</th><th>Название</th><th>Группа</th><th>Видимость</th><?php if(column_exists('csSoftProducts','OrderAllow')): ?><th>Заказ</th><?php endif; ?><?php if(column_exists('csSoftProducts','OrderIndex')): ?><th>Порядок</th><?php endif; ?><th></th></tr></thead><tbody>
-<?php foreach($rows as $r): $name=a_legacy((string)$r['Name']);$group=a_legacy((string)($r['GroupName']??''));$deleteBlocked=products_admin_delete_blocked($r); ?><tr data-name="<?=aesc($name)?>" data-group="<?=aesc($group)?>"><td><?=(int)$r['ID']?></td><td><b><?=aesc($name)?></b><div class="help"><?=aesc(a_legacy($r['ShortDescr']??''))?></div></td><td><?=aesc($group)?></td><td><span class="badge <?=$r['IsActive']?'on':'off'?>"><?=$r['IsActive']?'Активен':'Скрыт'?></span></td><?php if(array_key_exists('OrderAllow',$r)): ?><td><span class="badge <?=$r['OrderAllow']?'on':'off'?>"><?=$r['OrderAllow']?'Разрешён':'Запрещён'?></span></td><?php endif; ?><?php if(array_key_exists('OrderIndex',$r)): ?><td><?=(int)$r['OrderIndex']?></td><?php endif; ?><td><div class="actions"><a class="btn" href="product-edit.php?id=<?=$r['ID']?>">Изменить</a><a class="btn" href="product-assets.php?id=<?=$r['ID']?>">Ресурсы</a><?php if($deleteBlocked): ?><button class="btn" type="button" disabled title="Удаление недоступно: у продукта есть данные или ресурсы">Удалить</button><?php else: ?><button class="btn js-product-delete" type="button" data-product-id="<?=(int)$r['ID']?>" data-product-name="<?=aesc($name)?>">Удалить</button><?php endif; ?></div></td></tr><?php endforeach; ?></tbody></table></div>
+<div class="table-wrap"><table class="table" id="productsTable"><thead><tr><th>ID</th><th>Название</th><th>Группа</th><th>Видимость</th><?php if(column_exists('csSoftProducts','OrderAllow')): ?><th>Заказ</th><?php endif; ?><th></th></tr></thead><tbody>
+<?php foreach($rows as $r): $name=a_legacy((string)$r['Name']);$group=a_legacy((string)($r['GroupName']??''));$deleteBlocked=products_admin_delete_blocked($r); ?><tr data-name="<?=aesc($name)?>" data-group="<?=aesc($group)?>"><td><?=(int)$r['ID']?></td><td><b><?=aesc($name)?></b><div class="help"><?=aesc(a_legacy($r['ShortDescr']??''))?></div></td><td><?=aesc($group)?></td><td><span class="badge <?=$r['IsActive']?'on':'off'?>"><?=$r['IsActive']?'Активен':'Скрыт'?></span></td><?php if(array_key_exists('OrderAllow',$r)): ?><td><span class="badge <?=$r['OrderAllow']?'on':'off'?>"><?=$r['OrderAllow']?'Разрешён':'Запрещён'?></span></td><?php endif; ?><td><div class="actions"><a class="btn" href="product-edit.php?id=<?=$r['ID']?>">Изменить</a><a class="btn" href="product-assets.php?id=<?=$r['ID']?>">Ресурсы</a><?php if($deleteBlocked): ?><button class="btn" type="button" disabled title="Удаление недоступно: у продукта есть данные или ресурсы">Удалить</button><?php else: ?><button class="btn js-product-delete" type="button" data-product-id="<?=(int)$r['ID']?>" data-product-name="<?=aesc($name)?>">Удалить</button><?php endif; ?></div></td></tr><?php endforeach; ?></tbody></table></div>
 </div>
 
 <div id="home-products" class="card products-tools-card">
