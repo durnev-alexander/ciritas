@@ -1,18 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 64" role="img" aria-labelledby="title">
   <title id="title">Логотип ЦИРИТАС</title>
   <defs>
-    <linearGradient id="blue" x1="10" y1="8" x2="42" y2="58" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#19b7ff"/>
-      <stop offset=".55" stop-color="#1677ee"/>
-      <stop offset="1" stop-color="#174ba8"/>
+    <linearGradient id="leftFront" x1="10" y1="8" x2="26" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#18b8ff"/>
+      <stop offset=".55" stop-color="#1599f4"/>
+      <stop offset="1" stop-color="#0d70d9"/>
+    </linearGradient>
+    <linearGradient id="leftSide" x1="8" y1="10" x2="31" y2="61" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#157fe8"/>
+      <stop offset="1" stop-color="#0a3f9d"/>
+    </linearGradient>
+    <linearGradient id="blueLine" x1="22" y1="10" x2="58" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#087bff"/>
+      <stop offset="1" stop-color="#18b8ff"/>
+    </linearGradient>
+    <linearGradient id="darkLine" x1="22" y1="38" x2="62" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#25405d"/>
+      <stop offset="1" stop-color="#13263b"/>
     </linearGradient>
   </defs>
-  <path d="M13 9.5 25 3v9.2l-5 2.8v34l5 2.8V61L13 54.5A8 8 0 0 1 9 47.6V16.4a8 8 0 0 1 4-6.9Z" fill="url(#blue)"/>
-  <path d="M20 18.5 36 8.5h11" fill="none" stroke="#1684f4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="50" cy="8.5" r="5.5" fill="#19a8ff"/>
-  <path d="M20 29.5 34 20h9" fill="none" stroke="#1684f4" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="46" cy="20" r="5" fill="#1684f4"/>
-  <path d="M20 41 37 30.5h12" fill="none" stroke="#5f7892" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="52" cy="30.5" r="5.5" fill="#5f7892"/>
-  <path d="M20 49.5h19l7-5" fill="none" stroke="#37526e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Main two-tone structural element -->
+  <path d="M10 14 24 6v38.5l7 6V61L14 52A8 8 0 0 1 10 45V14Z" fill="url(#leftFront)"/>
+  <path d="M10 14 18 9v35l13 11v6L14 52A8 8 0 0 1 10 45V14Z" fill="url(#leftSide)"/>
+  <path d="M24 44.5 31 50.5h18V61H31Z" fill="#0b75ef"/>
+
+  <!-- Circuit branches -->
+  <path d="M24 18 39 8h12" fill="none" stroke="url(#blueLine)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+  <circle cx="56" cy="8" r="5.5" fill="none" stroke="#18b8ff" stroke-width="4"/>
+
+  <path d="M24 28.5 38 19h10" fill="none" stroke="#147be8" stroke-width="4.8" stroke-linecap="butt" stroke-linejoin="miter"/>
+  <circle cx="53" cy="19" r="5.2" fill="none" stroke="#147be8" stroke-width="4"/>
+
+  <path d="M24 40 40 30h13" fill="none" stroke="url(#darkLine)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+  <circle cx="59" cy="30" r="5.7" fill="none" stroke="#20364f" stroke-width="4.2"/>
+
+  <!-- Separate lower-right vertical trapezoid -->
+  <path d="M48 46 55 41.5V54.5L48 59Z" fill="#1b3048"/>
 </svg>
