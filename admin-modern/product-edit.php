@@ -14,17 +14,30 @@ function product_admin_name_key(string $value): string {
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_check();
     $rawName=trim((string)($_POST['name']??''));
-    $data=[
+    $postedRow=[
         'SoftGroupID'=>(int)($_POST['group']??0),
-        'Name'=>admin_db_text($rawName),
-        'ShortDescr'=>admin_db_text((string)($_POST['shortDescr']??'')),
-        'About'=>admin_db_text((string)($_POST['about']??'')),
-        'Features'=>admin_db_text((string)($_POST['features']??'')),
+        'Name'=>$rawName,
+        'ShortDescr'=>(string)($_POST['shortDescr']??''),
+        'About'=>(string)($_POST['about']??''),
+        'Features'=>(string)($_POST['features']??''),
         'IsActive'=>isset($_POST['active'])?1:0,
+        'OrderAllow'=>isset($_POST['orderAllow'])?1:0,
+        'PriceDescr'=>(string)($_POST['priceDescr']??''),
+        'OrderIndex'=>(int)($_POST['orderIndex']??0),
     ];
-    if($columns['PriceDescr'])$data['PriceDescr']=admin_db_text((string)($_POST['priceDescr']??''));
-    if($columns['OrderAllow'])$data['OrderAllow']=isset($_POST['orderAllow'])?1:0;
-    if($columns['OrderIndex'])$data['OrderIndex']=(int)($_POST['orderIndex']??0);
+    $row=array_merge($row,$postedRow);
+
+    $data=[
+        'SoftGroupID'=>$postedRow['SoftGroupID'],
+        'Name'=>admin_db_text($rawName),
+        'ShortDescr'=>admin_db_text($postedRow['ShortDescr']),
+        'About'=>admin_db_text($postedRow['About']),
+        'Features'=>admin_db_text($postedRow['Features']),
+        'IsActive'=>$postedRow['IsActive'],
+    ];
+    if($columns['PriceDescr'])$data['PriceDescr']=admin_db_text($postedRow['PriceDescr']);
+    if($columns['OrderAllow'])$data['OrderAllow']=$postedRow['OrderAllow'];
+    if($columns['OrderIndex'])$data['OrderIndex']=$postedRow['OrderIndex'];
     if($rawName===''){
         $error='Укажите название продукта.';
     }else{
