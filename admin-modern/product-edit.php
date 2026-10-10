@@ -33,7 +33,7 @@ admin_header($id?'Редактирование продукта':'Новый п�
 <?php if(!empty($error)): ?><div class="alert error"><?=aesc($error)?></div><?php endif; ?>
 <form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><div class="form-grid">
 <div class="field"><label class="label">Название</label><input class="input" name="name" required value="<?=aesc(a_legacy($row['Name']??''))?>"></div>
-<div class="field"><label class="label">Группа</label><select class="select" name="group" required><?php foreach($groups as $g): ?><option value="<?=$g['ID']?>" <?=$row['SoftGroupID']==$g['ID']?'selected':''?>><?=aesc(a_legacy($g['Name']))?></option><?php endforeach; ?></select><div class="help">Группа видна только в админке.</div></div>
+<div class="field"><label class="label">Группа</label><select class="select" name="group" required><?php foreach($groups as $g): ?><option value="<?=$g['ID']?>" <?=$row['SoftGroupID']==$g['ID']?'selected':''?>><?=aesc(a_legacy($g['Name']))?></option><?php endforeach; ?></select></div>
 <?php if($columns['OrderIndex']): ?><div class="field"><label class="label">Порядок</label><input class="input" type="number" name="orderIndex" value="<?=(int)($row['OrderIndex']??0)?>"></div><?php endif; ?>
 <div class="field"><label class="checkbox"><input type="checkbox" name="active" <?=$row['IsActive']?'checked':''?>> Активен на сайте</label><?php if($columns['OrderAllow']): ?><label class="checkbox"><input type="checkbox" name="orderAllow" <?=!empty($row['OrderAllow'])?'checked':''?>> Разрешить оформление заказа</label><?php endif; ?></div>
 <div class="field full"><label class="label">Краткое описание</label><textarea class="textarea" name="shortDescr" rows="3"><?=aesc(a_legacy($row['ShortDescr']??''))?></textarea></div>
