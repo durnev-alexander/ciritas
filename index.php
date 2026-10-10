@@ -32,7 +32,7 @@ if($newsCount>0){
 
 render_header('ЦИРИТАС');
 ?>
-<section class="hero"><div class="container"><h1>Программные решения ЦИРИТАС</h1><p>Современные приложения для автоматизации и управления.</p></div></section>
+<section class="hero"><div class="container"><h1>Программные решения</h1><p>Современные приложения для автоматизации и управления.</p></div></section>
 <section class="section"><div class="container">
 <div class="section-head"><div><h2>Продукты</h2><p class="muted">Основные продукты ЦИРИТАС</p></div><a href="products.php">Все продукты →</a></div>
 <?php if($products): ?><div class="product-list"><?php foreach($products as $p) render_product_list_card($p,'h3'); ?></div><?php else: ?><div class="content-card"><p>Продукты для главной страницы пока не выбраны.</p></div><?php endif; ?>
