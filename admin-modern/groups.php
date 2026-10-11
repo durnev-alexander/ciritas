@@ -96,7 +96,12 @@ admin_header('Группы');
         <input id="groupSearch" class="input" type="search" placeholder="Поиск по названию группы..." style="flex:1;min-width:0">
         <a class="btn primary" href="group-edit.php">+ Добавить группу</a>
     </div>
-    <style>.groups-actions-cell .actions{justify-content:flex-end}</style>
+    <style>
+        #groupsTable{table-layout:auto}
+        #groupsTable th:nth-child(1),#groupsTable td:nth-child(1),#groupsTable th:nth-child(2),#groupsTable td:nth-child(2){width:50%}
+        #groupsTable th:nth-child(n+3),#groupsTable td:nth-child(n+3){width:1%;white-space:nowrap;text-align:right}
+        #groupsTable td:nth-child(5) .actions,#groupsTable td:nth-child(6) .actions{justify-content:flex-end}
+    </style>
     <div class="table-wrap">
         <table class="table products-table" id="groupsTable">
             <thead><tr><th>Группа</th><th>Описание</th><th>Продуктов</th><th>Статус</th><th>Сортировка</th><th class="products-actions-head">Действия</th></tr></thead>
