@@ -96,6 +96,7 @@ admin_header('Группы');
         <input id="groupSearch" class="input" type="search" placeholder="Поиск по названию группы..." style="flex:1;min-width:0">
         <a class="btn primary" href="group-edit.php">+ Добавить группу</a>
     </div>
+    <style>.groups-actions-cell .actions{justify-content:flex-end}</style>
     <div class="table-wrap">
         <table class="table products-table" id="groupsTable">
             <thead><tr><th>Группа</th><th>Описание</th><th>Продуктов</th><th>Статус</th><th>Сортировка</th><th class="products-actions-head">Действия</th></tr></thead>
@@ -116,7 +117,7 @@ admin_header('Группы');
                         </form>
                         <?php else: ?><span class="muted">Нет поля сортировки</span><?php endif; ?>
                     </td>
-                    <td class="products-actions-cell">
+                    <td class="products-actions-cell groups-actions-cell">
                         <div class="actions">
                             <a class="btn" href="group-edit.php?id=<?=(int)$r['ID']?>">Изменить</a>
                             <?php if($productCount>0): ?>
