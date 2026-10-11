@@ -64,6 +64,14 @@ function products_admin_order_part(string $alias, ?string $column, string $fallb
     return $alias.'.`'.str_replace('`','',$fallback).'`, '.$alias.'.ID';
 }
 
+function products_admin_html(string $value): string {
+    $html=a_legacy($value);
+    if(preg_match('/&lt;\/?[a-z][^&]*&gt;/i',$html)){
+        $html=html_entity_decode($html,ENT_QUOTES|ENT_HTML5,'UTF-8');
+    }
+    return $html;
+}
+
 if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['product_action'])){
     csrf_check();
     try{
@@ -140,7 +148,7 @@ admin_header('Продукты');
     <a class="btn primary products-add-button" href="product-edit.php">+ Добавить продукт</a>
 </div>
 <div class="table-wrap"><table class="table products-table" id="productsTable"><thead><tr><th>ID</th><th>Название</th><th>Группа</th><th>Видимость</th><th>Заказ</th><th class="products-actions-head">Действия</th></tr></thead><tbody>
-<?php foreach($rows as $r): $name=a_legacy((string)$r['Name']);$group=a_legacy((string)($r['GroupName']??''));$deleteBlocked=products_admin_delete_blocked($r); ?><tr data-name="<?=aesc($name)?>" data-group="<?=aesc($group)?>"><td><?=(int)$r['ID']?></td><td><b><?=aesc($name)?></b><div class="help"><?=aesc(a_legacy($r['ShortDescr']??''))?></div></td><td><?=aesc($group)?></td><td><span class="badge <?=$r['IsActive']?'on':'off'?>"><?=$r['IsActive']?'Активен':'Скрыт'?></span></td><td><?php if(array_key_exists('OrderAllow',$r)): ?><span class="badge <?=$r['OrderAllow']?'on':'off'?>"><?=$r['OrderAllow']?'Разрешён':'Запрещён'?></span><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="products-actions-cell"><div class="actions"><a class="btn" href="product-edit.php?id=<?=$r['ID']?>">Изменить</a><a class="btn" href="product-assets.php?id=<?=$r['ID']?>">Ресурсы</a><?php if($deleteBlocked): ?><button class="btn" type="button" disabled title="Удаление недоступно: у продукта есть данные или ресурсы">Удалить</button><?php else: ?><button class="btn js-product-delete" type="button" data-product-id="<?=(int)$r['ID']?>" data-product-name="<?=aesc($name)?>">Удалить</button><?php endif; ?></div></td></tr><?php endforeach; ?></tbody></table></div>
+<?php foreach($rows as $r): $name=a_legacy((string)$r['Name']);$group=a_legacy((string)($r['GroupName']??''));$deleteBlocked=products_admin_delete_blocked($r); ?><tr data-name="<?=aesc($name)?>" data-group="<?=aesc($group)?>"><td><?=(int)$r['ID']?></td><td><b><?=aesc($name)?></b><div class="help product-short-html"><?=products_admin_html((string)($r['ShortDescr']??''))?></div></td><td><?=aesc($group)?></td><td><span class="badge <?=$r['IsActive']?'on':'off'?>"><?=$r['IsActive']?'Активен':'Скрыт'?></span></td><td><?php if(array_key_exists('OrderAllow',$r)): ?><span class="badge <?=$r['OrderAllow']?'on':'off'?>"><?=$r['OrderAllow']?'Разрешён':'Запрещён'?></span><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="products-actions-cell"><div class="actions"><a class="btn" href="product-edit.php?id=<?=$r['ID']?>">Изменить</a><a class="btn" href="product-assets.php?id=<?=$r['ID']?>">Ресурсы</a><?php if($deleteBlocked): ?><button class="btn" type="button" disabled title="Удаление недоступно: у продукта есть данные или ресурсы">Удалить</button><?php else: ?><button class="btn js-product-delete" type="button" data-product-id="<?=(int)$r['ID']?>" data-product-name="<?=aesc($name)?>">Удалить</button><?php endif; ?></div></td></tr><?php endforeach; ?></tbody></table></div>
 </div>
 
 <div id="home-products" class="card products-tools-card">
