@@ -2,6 +2,13 @@
     var editors=[].slice.call(document.querySelectorAll('textarea.html-editor'));
     if(!editors.length) return;
 
+    function decodeLegacyHtml(value){
+        if(typeof value!=='string' || !/&lt;\/?[a-z][\s\S]*?&gt;/i.test(value)) return value;
+        var textarea=document.createElement('textarea');
+        textarea.innerHTML=value;
+        return textarea.value;
+    }
+
     function initEditor(){
         if(!window.tinymce) return;
         var dark=document.documentElement.dataset.theme==='dark';
@@ -26,6 +33,16 @@
             valid_elements:'*[*]',
             extended_valid_elements:'*[*]',
             setup:function(editor){
+                editor.on('init',function(){
+                    var source=editor.getElement();
+                    if(!source) return;
+                    var original=source.value||'';
+                    var decoded=decodeLegacyHtml(original);
+                    if(decoded!==original){
+                        editor.setContent(decoded,{format:'html'});
+                        editor.save();
+                    }
+                });
                 editor.on('change input undo redo',function(){editor.save();});
             }
         });
