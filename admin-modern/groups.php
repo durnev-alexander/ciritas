@@ -105,7 +105,7 @@ admin_header('Группы');
         #groupsTable th:nth-child(4),#groupsTable td:nth-child(4),
         #groupsTable th:nth-child(5),#groupsTable td:nth-child(5){width:1%;white-space:nowrap}
         #groupsTable td:nth-child(5) .actions{justify-content:flex-start;flex-wrap:nowrap}
-        #groupsTable .products-actions-head,#groupsTable .products-actions-cell{text-align:left}
+        #groupsTable .products-actions-head,#groupsTable .products-actions-cell{width:1%;min-width:0;text-align:left;white-space:nowrap}
         #groupsTable .products-actions-cell .actions{justify-content:flex-start;flex-wrap:nowrap}
     </style>
     <div class="table-wrap">
