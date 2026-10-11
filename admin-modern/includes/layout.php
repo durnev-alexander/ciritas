@@ -24,9 +24,14 @@ function admin_nav(string $href,string $label,string $icon,array $matches=[]): s
     return '<a class="admin-nav-link'.($active?' active':'').'" href="'.$href.'"><span class="admin-nav-icon">'.admin_icon($icon).'</span><span>'.$label.'</span></a>';
 }
 
-function admin_notice(string $message,string $type='success'): void {
+function admin_set_notice(string $message,string $type='success'): void {
     $type=$type==='error'?'error':'success';
     $_SESSION['admin_status_notice']=['message'=>$message,'type'=>$type];
+}
+
+function admin_notice(string $message,string $type='success'): void {
+    $type=$type==='error'?'error':'success';
+    admin_set_notice($message,$type);
     $messageJson=json_encode($message,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
     $typeJson=json_encode($type,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
     echo '<script>(function(){var message='.$messageJson.',type='.$typeJson.';function show(){var bar=document.getElementById("adminStatusBar");if(!bar)return false;bar.textContent=message;bar.classList.remove("success","error","empty");bar.classList.add(type);bar.setAttribute("role","status");return true;}if(!show())document.addEventListener("DOMContentLoaded",show,{once:true});})();</script>';
