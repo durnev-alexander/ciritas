@@ -89,7 +89,7 @@ admin_header('Группы');
 <?php if($error) admin_notice($error,'error'); ?>
 <div class="card">
     <div class="toolbar">
-        <div><b>Служебный справочник</b><div class="help">Группы используются только в админке. Порядок групп определяет их сортировку на публичной странице продуктов.</div></div>
+        <div><h2>Служебный справочник</h2><div class="help">Группы используются только в админке. Порядок групп определяет их сортировку на публичной странице продуктов.</div></div>
         <a class="btn primary" href="group-edit.php">+ Добавить группу</a>
     </div>
     <div class="table-wrap">
