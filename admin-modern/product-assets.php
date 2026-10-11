@@ -84,8 +84,45 @@ function asset_normalize_downloads(int $productId,string $column): array {
     unset($row);
     return $rows;
 }
+function asset_normalize_prices(int $productId,string $column): array {
+    $safe='`'.str_replace('`','',$column).'`';
+    $q=db()->prepare('SELECT ID,'.$safe.' SortValue FROM csSoftPrices WHERE SoftProductID=? ORDER BY '.$safe.',ID');
+    $q->execute([$productId]);
+    $rows=$q->fetchAll();
+    $update=db()->prepare('UPDATE csSoftPrices SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');
+    $pos=10;
+    foreach($rows as &$row){
+        $row['SortValue']=$pos;
+        $update->execute([$pos,(int)$row['ID'],$productId]);
+        $pos+=10;
+    }
+    unset($row);
+    return $rows;
+}
+function asset_ensure_price_sort_column(): ?string {
+    $column=asset_sort_column('csSoftPrices');
+    if($column!==null) return $column;
+    try{
+        db()->exec('ALTER TABLE csSoftPrices ADD COLUMN SortOrder INT NOT NULL DEFAULT 0');
+        $productIds=db()->query('SELECT DISTINCT SoftProductID FROM csSoftPrices ORDER BY SoftProductID')->fetchAll(PDO::FETCH_COLUMN);
+        $select=db()->prepare('SELECT ID FROM csSoftPrices WHERE SoftProductID=? ORDER BY Title,ID');
+        $update=db()->prepare('UPDATE csSoftPrices SET SortOrder=? WHERE ID=? AND SoftProductID=?');
+        foreach($productIds as $productId){
+            $productId=(int)$productId;
+            $select->execute([$productId]);
+            $pos=10;
+            foreach($select->fetchAll() as $row){
+                $update->execute([$pos,(int)$row['ID'],$productId]);
+                $pos+=10;
+            }
+        }
+        return 'SortOrder';
+    }catch(Throwable){}
+    return null;
+}
 
 $downloadSortColumn=asset_sort_column('csSoftDownloads');
+$priceSortColumn=asset_ensure_price_sort_column();
 $error='';
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_check();
@@ -146,10 +183,34 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             if($asset){
                 db()->prepare('UPDATE csSoftPrices SET Title=?,Price=? WHERE ID=? AND SoftProductID=?')->execute([$title,$price,$asset,$id]);
             }else{
-                db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price]);
+                if($priceSortColumn!==null){
+                    $safe='`'.str_replace('`','',$priceSortColumn).'`';
+                    $q=db()->prepare('SELECT COALESCE(MAX('.$safe.'),0)+10 FROM csSoftPrices WHERE SoftProductID=?');
+                    $q->execute([$id]);
+                    $next=(int)$q->fetchColumn();
+                    db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price,'.$safe.') VALUES (?,?,?,?)')->execute([$id,$title,$price,$next]);
+                }else{
+                    db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price]);
+                }
+            }
+        }elseif(($action==='price_sort_up'||$action==='price_sort_down')&&$asset){
+            if($priceSortColumn===null) throw new RuntimeException('В таблице цен не найдено поле индекса сортировки.');
+            $rows=asset_normalize_prices($id,$priceSortColumn);
+            $index=null;
+            foreach($rows as $i=>$row){if((int)$row['ID']===$asset){$index=$i;break;}}
+            if($index!==null){
+                $other=$action==='price_sort_up'?$index-1:$index+1;
+                if(isset($rows[$other])){
+                    $a=$rows[$index];$b=$rows[$other];
+                    $safe='`'.str_replace('`','',$priceSortColumn).'`';
+                    $q=db()->prepare('UPDATE csSoftPrices SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');
+                    $q->execute([(int)$b['SortValue'],(int)$a['ID'],$id]);
+                    $q->execute([(int)$a['SortValue'],(int)$b['ID'],$id]);
+                }
             }
         }elseif($action==='price_delete'&&$asset){
             db()->prepare('DELETE FROM csSoftPrices WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);
+            if($priceSortColumn!==null) asset_normalize_prices($id,$priceSortColumn);
         }elseif($action==='shot_save'&&$asset){
             db()->prepare('UPDATE csSoftShots SET Name=? WHERE ID=? AND SoftProductID=?')->execute([asset_db_text((string)($_POST['title']??'')),$asset,$id]);
         }elseif($action==='shot_add'){
@@ -181,7 +242,12 @@ try{
     $q->execute([$id]);
     $files=$q->fetchAll();
 }catch(Throwable){}
-try{$q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$prices=$q->fetchAll();}catch(Throwable){}
+try{
+    $order=$priceSortColumn!==null?'`'.str_replace('`','',$priceSortColumn).'`,ID':'Title,ID';
+    $q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? ORDER BY '.$order);
+    $q->execute([$id]);
+    $prices=$q->fetchAll();
+}catch(Throwable){}
 try{
     $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());
     $q->execute([$id]);
@@ -193,7 +259,7 @@ try{
 admin_header('Ресурсы: '.a_legacy($p['Name']));
 if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 <div class="card">
-<div class="section-title" style="margin-bottom:16px"><div><h2>Файлы для скачивания</h2><div class="help">Можно загрузить новый файл в каталог Uploads или оставить существующее имя файла.</div></div></div>
+<div class="section-title" style="margin-bottom:16px"><div><h2>Файлы для скачивания</h2><div class="help">Можно загрузить новый файл в каталог Uploads или оставить существующее имя файла.</div></div><div class="admin-products-summary">Всего: <?=count($files)?></div></div>
 <style>
 .asset-files-table{table-layout:auto}
 .asset-files-table .asset-description{width:66.666%}
@@ -203,6 +269,11 @@ if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 .asset-files-table .asset-action .btn{width:100%}
 .asset-files-table .asset-position{width:100%;min-width:0;box-sizing:border-box;text-align:center}
 .asset-file-picker{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap}
+.asset-prices-table{table-layout:auto}
+.asset-prices-table .asset-price-title{width:100%}
+.asset-prices-table .asset-price-value,.asset-prices-table .asset-price-sort,.asset-prices-table .asset-price-action{width:1%;white-space:nowrap}
+.asset-prices-table .asset-price-sort .actions{flex-wrap:nowrap}
+.asset-prices-table .asset-price-action .btn{width:100%}
 </style>
 <div class="table-wrap"><table class="table asset-files-table"><thead><tr><th class="asset-description">Описание</th><th class="asset-file">Файл</th><th class="asset-active">Активен</th><th class="asset-sort">Сортировка</th><th class="asset-action" colspan="2">Действия</th></tr></thead><tbody>
 <?php foreach($files as $i=>$f): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$f['ID']?>"><td class="asset-description"><input class="input" name="description" value="<?=aesc(a_legacy($f['Description']??''))?>"></td><td class="asset-file"><input class="input" name="file" value="<?=aesc(a_legacy($f['File']??''))?>"></td><td class="asset-active"><input type="checkbox" name="active" <?=!empty($f['IsActive'])?'checked':''?>></td><td class="asset-sort"><?php if($downloadSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="file_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="file_sort_down" <?=$i===count($files)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-action"><button class="btn" name="action" value="file_save">Сохранить</button></td><td class="asset-action"><button class="btn danger" name="action" value="file_delete" onclick="return confirm('Удалить запись о файле?')">Удалить</button></td></form></tr><?php endforeach; ?>
@@ -210,7 +281,12 @@ if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 </tbody></table></div></div>
 <script>(function(){var picker=document.getElementById('newDownloadUpload');var name=document.getElementById('newDownloadFileName');if(!picker||!name)return;picker.addEventListener('change',function(){if(picker.files&&picker.files[0])name.value=picker.files[0].name;});})();</script>
 
-<div class="card" style="margin-top:18px"><h2>Цены</h2><div class="table-wrap"><table class="table"><thead><tr><th>Название</th><th>Цена</th><th></th></tr></thead><tbody><?php foreach($prices as $pr): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><input type="hidden" name="asset_id" value="<?=$pr['ID']?>"><td><input class="input" name="title" value="<?=aesc(a_legacy($pr['Title']??''))?>"></td><td><input class="input" name="price" inputmode="decimal" value="<?=aesc((string)($pr['Price']??''))?>"></td><td><div class="actions"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="price_delete" onclick="return confirm('Удалить цену?')">Удалить</button></div></td></form></tr><?php endforeach; ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><td><input class="input" name="title" placeholder="Название лицензии"></td><td><input class="input" name="price" inputmode="decimal" value="0"></td><td><button class="btn primary">Добавить</button></td></form></tr></tbody></table></div></div>
+<div class="card" style="margin-top:18px">
+<div class="section-title" style="margin-bottom:16px"><div><h2>Цены</h2><div class="help">Здесь укажите все виды лицензий и их цены</div></div><div class="admin-products-summary">Всего: <?=count($prices)?></div></div>
+<div class="table-wrap"><table class="table asset-prices-table"><thead><tr><th class="asset-price-title">Название</th><th class="asset-price-value">Цена</th><th class="asset-price-sort">Сортировка</th><th class="asset-price-action" colspan="2">Действия</th></tr></thead><tbody>
+<?php foreach($prices as $i=>$pr): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$pr['ID']?>"><td class="asset-price-title"><input class="input" name="title" value="<?=aesc(a_legacy($pr['Title']??''))?>"></td><td class="asset-price-value"><input class="input" name="price" inputmode="decimal" value="<?=aesc((string)($pr['Price']??''))?>"></td><td class="asset-price-sort"><?php if($priceSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="price_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="price_sort_down" <?=$i===count($prices)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-price-action"><button class="btn" name="action" value="price_save">Сохранить</button></td><td class="asset-price-action"><button class="btn danger" name="action" value="price_delete" onclick="return confirm('Удалить цену?')">Удалить</button></td></form></tr><?php endforeach; ?>
+<tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><td class="asset-price-title"><input class="input" name="title" placeholder="Название лицензии"></td><td class="asset-price-value"><input class="input" name="price" inputmode="decimal" value="0"></td><td class="asset-price-sort"><span class="muted">—</span></td><td class="asset-price-action"></td><td class="asset-price-action"><button class="btn primary">Добавить</button></td></form></tr>
+</tbody></table></div></div>
 
 <div class="card" style="margin-top:18px"><div class="section-title"><div><h2>Скриншоты</h2><div class="help">Порядок совпадает со старой сортировкой сайта: первая запись используется как картинка программы в списках. Новые скриншоты автоматически добавляются в конец. В админке показывается полноразмерное изображение.</div></div></div><div class="shot-grid"><?php foreach($shots as $s): ?><?php $full=a_legacy((string)($s['FileFull']??'')); $thumb=a_legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; ?><form method="post" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_save"><input type="hidden" name="asset_id" value="<?=$s['ID']?>"><?php if($preview!==''): ?><a class="shot-preview" href="<?=aesc(asset_photo_url($preview))?>" target="_blank"><img src="<?=aesc(asset_photo_url($preview))?>" alt=""></a><div class="help" style="margin-bottom:8px"><?=aesc($preview)?></div><?php else: ?><div class="shot-preview empty">Нет изображения</div><?php endif; ?><input class="input" name="title" value="<?=aesc(a_legacy($s['Name']??''))?>" placeholder="Название"><div class="actions" style="margin-top:10px"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="shot_delete" onclick="return confirm('Удалить запись о скриншоте?')">Удалить</button></div></form><?php endforeach; ?><form method="post" enctype="multipart/form-data" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_add"><div class="upload-box">Новый скриншот</div><input class="input" name="title" placeholder="Название"><input type="file" name="shot" accept="image/jpeg,image/png,image/gif,image/webp" required style="margin-top:10px"><button class="btn primary" style="margin-top:10px">Загрузить</button></form></div></div>
 
