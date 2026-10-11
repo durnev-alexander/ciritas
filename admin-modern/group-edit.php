@@ -147,14 +147,12 @@ admin_header($id?'Редактирование группы':'Новая гру�
     <div class="section-title"><div><h2>Программы группы</h2><div class="help">Программы показаны в порядке их индекса сортировки. Стрелки меняют этот индекс внутри текущей группы.</div></div></div>
     <?php if($groupProducts): ?>
     <style>
-        .group-products-table{table-layout:fixed;width:100%}
+        .group-products-table{width:100%;table-layout:auto}
         .group-products-table th{text-align:left}
-        .group-products-table .group-product-name{width:auto}
-        .group-products-table .group-product-status{width:160px;min-width:160px;white-space:nowrap;text-align:left;padding-left:18px;padding-right:18px}
-        .group-products-table .group-product-sort{width:132px;min-width:132px;white-space:nowrap;text-align:left;padding-left:18px;padding-right:18px}
-        .group-products-table td.group-product-sort{text-align:right}
-        .group-products-table .group-product-sort .actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:nowrap}
-        .group-products-table .group-product-sort .sort-btn{min-width:38px;width:38px;padding-left:0;padding-right:0}
+        .group-products-table .group-product-name{width:100%}
+        .group-products-table .group-product-status,
+        .group-products-table .group-product-sort{width:1%;white-space:nowrap}
+        .group-products-table .group-product-sort .actions{flex-wrap:nowrap}
     </style>
     <div class="table-wrap"><table class="table group-products-table"><thead><tr><th class="group-product-name">Программа</th><th class="group-product-status">Статус</th><th class="group-product-sort">Сортировка</th></tr></thead><tbody>
     <?php foreach($groupProducts as $i=>$product): ?>
@@ -170,7 +168,7 @@ admin_header($id?'Редактирование группы':'Новая гру�
                     <button class="btn sort-btn" name="direction" value="up" <?=$i===0?'disabled':''?> title="Выше">↑</button>
                     <button class="btn sort-btn" name="direction" value="down" <?=$i===count($groupProducts)-1?'disabled':''?> title="Ниже">↓</button>
                 </form>
-                <?php else: ?><span class="muted">—</span><?php endif; ?>
+                <?php else: ?><span class="muted">Нет поля сортировки</span><?php endif; ?>
             </td>
         </tr>
     <?php endforeach; ?>
