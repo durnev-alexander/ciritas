@@ -51,7 +51,7 @@ render_header(legacy($p['Name']));
 <?php if($features!==''): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
 
 <?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
-<?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$thumb!==''?$thumb:$full; if($preview==='') continue; $shotName=legacy((string)($s['Name']??'')); ?>
+<?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; $shotName=legacy((string)($s['Name']??'')); ?>
 <a class="product-shot" href="<?=htmlspecialchars(product_photo_asset_url($full!==''?$full:$preview))?>" target="_blank" rel="noopener"><span class="product-shot-title"><?=htmlspecialchars($shotName)?></span><img src="<?=htmlspecialchars(product_photo_asset_url($preview))?>" alt="<?=htmlspecialchars($shotName)?>"></a>
 <?php endforeach; ?>
 </div></div><?php endif; ?>
