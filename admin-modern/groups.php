@@ -90,14 +90,18 @@ admin_header('Группы');
 <div class="card">
     <div class="toolbar">
         <div><h2>Служебный справочник</h2><div class="help">Группы используются только в админке. Порядок групп определяет их сортировку на публичной странице продуктов.</div></div>
+        <div class="admin-products-summary">Всего: <?=count($rows)?></div>
+    </div>
+    <div class="toolbar groups-filter-row">
+        <input id="groupSearch" class="input" type="search" placeholder="Поиск по названию группы..." style="flex:1;min-width:0">
         <a class="btn primary" href="group-edit.php">+ Добавить группу</a>
     </div>
     <div class="table-wrap">
-        <table class="table">
-            <thead><tr><th>Группа</th><th>Описание</th><th>Продуктов</th><th>Статус</th><th>Сортировка</th><th>Действия</th></tr></thead>
+        <table class="table products-table" id="groupsTable">
+            <thead><tr><th>Группа</th><th>Описание</th><th>Продуктов</th><th>Статус</th><th>Сортировка</th><th class="products-actions-head">Действия</th></tr></thead>
             <tbody>
             <?php foreach($rows as $i=>$r): $productCount=(int)$r['ProductCount']; $name=a_legacy((string)$r['Name']); ?>
-                <tr>
+                <tr data-name="<?=aesc($name)?>">
                     <td><b><?=aesc($name)?></b></td>
                     <td><?=aesc(a_legacy($r['Description']??''))?></td>
                     <td><?=$productCount?></td>
@@ -112,7 +116,7 @@ admin_header('Группы');
                         </form>
                         <?php else: ?><span class="muted">Нет поля сортировки</span><?php endif; ?>
                     </td>
-                    <td>
+                    <td class="products-actions-cell">
                         <div class="actions">
                             <a class="btn" href="group-edit.php?id=<?=(int)$r['ID']?>">Изменить</a>
                             <?php if($productCount>0): ?>
@@ -144,6 +148,12 @@ admin_header('Группы');
 </div>
 
 <script>(function(){
+var search=document.getElementById('groupSearch');
+var rows=[].slice.call(document.querySelectorAll('#groupsTable tbody tr'));
+function lower(v){return (v||'').toLocaleLowerCase('ru-RU')}
+function filter(){var q=lower((search.value||'').trim());rows.forEach(function(row){var ok=!q||lower(row.dataset.name||'').indexOf(q)!==-1;row.style.display=ok?'':'none';});}
+if(search)search.addEventListener('input',filter);
+
 var modal=document.getElementById('groupDeleteModal');
 var idInput=document.getElementById('groupDeleteId');
 var nameBox=document.getElementById('groupDeleteName');
