@@ -144,7 +144,7 @@ admin_header($id?'Редактирование группы':'Новая гру�
 
 <?php if($id): ?>
 <div id="group-products" class="card" style="margin-top:18px">
-    <div class="section-title" style="margin-bottom:16px"><div><h2>Программы группы</h2><div class="help">Программы показаны в порядке их индекса сортировки. Стрелки меняют этот индекс внутри текущей группы.</div></div></div>
+    <div class="section-title" style="margin-bottom:16px"><div><h2>Программы группы</h2><div class="help">Программы показаны в порядке их индекса сортировки. Стрелки меняют этот индекс внутри текущей группы.</div></div><div class="admin-products-summary">Всего: <?=count($groupProducts)?></div></div>
     <?php if($groupProducts): ?>
     <style>
         .group-products-table{width:100%;table-layout:auto}
