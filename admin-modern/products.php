@@ -152,19 +152,18 @@ admin_header('Продукты');
 </div>
 
 <div id="home-products" class="card products-tools-card">
-<div class="section-title"><div><h2>Продукты на главной</h2><div class="help">Состав и порядок программ, которые показываются на главной странице публичного сайта.</div></div></div>
+<div class="section-title" style="margin-bottom:16px"><div><h2>Продукты на главной</h2><div class="help">Состав и порядок программ, которые показываются на главной странице публичного сайта.</div></div></div>
 <style>
-.home-product-list{margin-top:16px}
-.home-product-list-head,.home-product-row{display:grid;grid-template-columns:70px minmax(0,1fr) auto auto;gap:14px;align-items:center}
-.home-product-list-head{padding:0 0 10px;color:var(--admin-muted);font-size:.76em;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
-.home-product-list-head .home-product-head-sort,.home-product-list-head .home-product-head-actions{white-space:nowrap}
-.home-product-row>.home-product-sort,.home-product-row>.home-product-actions{justify-self:start}
-.home-product-row>.home-product-actions{justify-self:end}
+.home-products-table .home-products-number{width:1%;white-space:nowrap}
+.home-products-table .home-products-name{width:100%}
+.home-products-table .home-products-sort,.home-products-table .home-products-actions{width:1%;white-space:nowrap}
+.home-products-table .home-products-sort .actions,.home-products-table .home-products-actions form{display:flex;gap:7px;align-items:center;flex-wrap:nowrap}
 </style>
-<?php if($current): ?><div class="home-product-list">
-<div class="home-product-list-head"><div>Номер</div><div>Название</div><div class="home-product-head-sort">Сортировка</div><div class="home-product-head-actions">Действия</div></div>
-<?php foreach($current as $i=>$row): ?><div class="home-product-row"><div class="home-product-position"><?=($i+1)?></div><div class="home-product-name"><strong><?=aesc(a_legacy($row['Name']))?></strong><?php if(!(int)$row['IsActive']): ?><span class="badge off">Неактивен</span><?php endif; ?></div><div class="home-product-sort"><form method="post" class="actions"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="id" value="<?=(int)$row['ID']?>"><button class="btn sort-btn" name="home_action" value="up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="home_action" value="down" <?=$i===count($current)-1?'disabled':''?> title="Ниже">↓</button></form></div><div class="home-product-actions"><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="id" value="<?=(int)$row['ID']?>"><button class="btn danger" name="home_action" value="remove">Убрать</button></form></div></div><?php endforeach; ?>
-</div><?php else: ?><p class="muted">Список пуст.</p><?php endif; ?>
+<?php if($current): ?>
+<div class="table-wrap"><table class="table products-table home-products-table"><thead><tr><th class="home-products-number">Номер</th><th class="home-products-name">Название</th><th class="home-products-sort">Сортировка</th><th class="home-products-actions">Действия</th></tr></thead><tbody>
+<?php foreach($current as $i=>$row): ?><tr><td class="home-products-number"><?=($i+1)?></td><td class="home-products-name"><strong><?=aesc(a_legacy($row['Name']))?></strong><?php if(!(int)$row['IsActive']): ?> <span class="badge off">Неактивен</span><?php endif; ?></td><td class="home-products-sort"><form method="post" class="actions"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="id" value="<?=(int)$row['ID']?>"><button class="btn sort-btn" name="home_action" value="up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="home_action" value="down" <?=$i===count($current)-1?'disabled':''?> title="Ниже">↓</button></form></td><td class="home-products-actions"><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="id" value="<?=(int)$row['ID']?>"><button class="btn danger" name="home_action" value="remove">Убрать</button></form></td></tr><?php endforeach; ?>
+</tbody></table></div>
+<?php else: ?><p class="muted">Список пуст.</p><?php endif; ?>
 <div class="products-add-home"><h3>Добавить программу на главную</h3><?php if($available): ?><form method="post" class="toolbar products-add-home-form"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><select class="select" name="product_id" required><?php foreach($available as $row): ?><option value="<?=(int)$row['ID']?>"><?=aesc(a_legacy($row['Name']))?><?=!(int)$row['IsActive']?' — неактивна':''?></option><?php endforeach; ?></select><button class="btn primary" name="home_action" value="add">Добавить</button></form><?php else: ?><p class="muted">Все программы уже добавлены.</p><?php endif; ?></div>
 </div>
 
