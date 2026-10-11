@@ -106,16 +106,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 if($fileName==='')throw new RuntimeException('Выберите файл или укажите его имя.');
                 if($downloadSortColumn!==null){$safe='`'.str_replace('`','',$downloadSortColumn).'`';$rows=asset_normalize('csSoftDownloads',$id,$downloadSortColumn);$position=(int)($_POST['position']??0);$max=count($rows)+1;if($position<1)$position=$max;if($position>$max)$position=$max;$update=db()->prepare('UPDATE csSoftDownloads SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');foreach($rows as $i=>$row){$place=$i+1;$update->execute([($place>=$position?$place+1:$place)*10,(int)$row['ID'],$id]);}db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive,'.$safe.') VALUES (?,?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0,$position*10]);}
                 else db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive) VALUES (?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0]);
+                admin_set_notice('Файл добавлен.','success');
             }
         }elseif(($action==='file_sort_up'||$action==='file_sort_down')&&$asset){if($downloadSortColumn===null)throw new RuntimeException('В таблице файлов не найдено поле индекса сортировки.');asset_move('csSoftDownloads',$id,$downloadSortColumn,$asset,$action==='file_sort_up');}
-        elseif($action==='file_delete'&&$asset){db()->prepare('DELETE FROM csSoftDownloads WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);if($downloadSortColumn!==null)asset_normalize('csSoftDownloads',$id,$downloadSortColumn);}
+        elseif($action==='file_delete'&&$asset){db()->prepare('DELETE FROM csSoftDownloads WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);if($downloadSortColumn!==null)asset_normalize('csSoftDownloads',$id,$downloadSortColumn);admin_set_notice('Файл удалён.','success');}
         elseif($action==='price_save'){
             $title=asset_db_text((string)($_POST['title']??''));$price=str_replace(',','.',trim((string)($_POST['price']??'0')));if(!is_numeric($price))throw new RuntimeException('Цена должна быть числом.');
             if($asset)db()->prepare('UPDATE csSoftPrices SET Title=?,Price=? WHERE ID=? AND SoftProductID=?')->execute([$title,$price,$asset,$id]);
-            else if($priceSortColumn!==null){$safe='`'.str_replace('`','',$priceSortColumn).'`';$rows=asset_normalize('csSoftPrices',$id,$priceSortColumn);$position=(int)($_POST['position']??0);$max=count($rows)+1;if($position<1)$position=$max;if($position>$max)$position=$max;$update=db()->prepare('UPDATE csSoftPrices SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');foreach($rows as $i=>$row){$place=$i+1;$update->execute([($place>=$position?$place+1:$place)*10,(int)$row['ID'],$id]);}db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price,'.$safe.') VALUES (?,?,?,?)')->execute([$id,$title,$price,$position*10]);}
-            else db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price]);
+            else if($priceSortColumn!==null){$safe='`'.str_replace('`','',$priceSortColumn).'`';$rows=asset_normalize('csSoftPrices',$id,$priceSortColumn);$position=(int)($_POST['position']??0);$max=count($rows)+1;if($position<1)$position=$max;if($position>$max)$position=$max;$update=db()->prepare('UPDATE csSoftPrices SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');foreach($rows as $i=>$row){$place=$i+1;$update->execute([($place>=$position?$place+1:$place)*10,(int)$row['ID'],$id]);}db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price,'.$safe.') VALUES (?,?,?,?)')->execute([$id,$title,$price,$position*10]);admin_set_notice('Цена добавлена.','success');}
+            else{db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price]);admin_set_notice('Цена добавлена.','success');}
         }elseif(($action==='price_sort_up'||$action==='price_sort_down')&&$asset){if($priceSortColumn===null)throw new RuntimeException('В таблице цен не найдено поле индекса сортировки.');asset_move('csSoftPrices',$id,$priceSortColumn,$asset,$action==='price_sort_up');}
-        elseif($action==='price_delete'&&$asset){db()->prepare('DELETE FROM csSoftPrices WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);if($priceSortColumn!==null)asset_normalize('csSoftPrices',$id,$priceSortColumn);}
+        elseif($action==='price_delete'&&$asset){db()->prepare('DELETE FROM csSoftPrices WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);if($priceSortColumn!==null)asset_normalize('csSoftPrices',$id,$priceSortColumn);admin_set_notice('Цена удалена.','success');}
         elseif($action==='shot_save'&&$asset){
             $description=asset_db_text((string)($_POST['description']??''));
             if($shotActiveColumn!==null){$safeActive='`'.str_replace('`','',$shotActiveColumn).'`';db()->prepare('UPDATE csSoftShots SET Name=?,'.$safeActive.'=? WHERE ID=? AND SoftProductID=?')->execute([$description,isset($_POST['active'])?1:0,$asset,$id]);}
@@ -128,7 +129,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             if($shotActiveColumn!==null){$columns[]='`'.str_replace('`','',$shotActiveColumn).'`';$values[]=isset($_POST['active'])?1:0;$marks[]='?';}
             if($shotSortColumn!==null){$rows=asset_normalize('csSoftShots',$id,$shotSortColumn);$position=(int)($_POST['position']??0);$max=count($rows)+1;if($position<1)$position=$max;if($position>$max)$position=$max;$safeSort='`'.str_replace('`','',$shotSortColumn).'`';$update=db()->prepare('UPDATE csSoftShots SET '.$safeSort.'=? WHERE ID=? AND SoftProductID=?');foreach($rows as $i=>$row){$place=$i+1;$update->execute([($place>=$position?$place+1:$place)*10,(int)$row['ID'],$id]);}$columns[]=$safeSort;$values[]=$position*10;$marks[]='?';}
             db()->prepare('INSERT INTO csSoftShots ('.implode(',',$columns).') VALUES ('.implode(',',$marks).')')->execute($values);
-        }elseif($action==='shot_delete'&&$asset){db()->prepare('DELETE FROM csSoftShots WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);if($shotSortColumn!==null)asset_normalize('csSoftShots',$id,$shotSortColumn);}
+            admin_set_notice('Скриншот добавлен.','success');
+        }elseif($action==='shot_delete'&&$asset){db()->prepare('DELETE FROM csSoftShots WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);if($shotSortColumn!==null)asset_normalize('csSoftShots',$id,$shotSortColumn);admin_set_notice('Скриншот удалён.','success');}
         redirect('product-assets.php?id='.$id);
     }catch(Throwable $e){$error=$e->getMessage();}
 }
@@ -139,7 +141,8 @@ try{$order=$priceSortColumn!==null?'`'.str_replace('`','',$priceSortColumn).'`,I
 try{$order=$shotSortColumn!==null?'`'.str_replace('`','',$shotSortColumn).'`,ID':'ID';$q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.$order);$q->execute([$id]);$shots=$q->fetchAll();}catch(Throwable){}
 
 admin_header('Ресурсы: '.a_legacy($p['Name']));
-if($error):?><div class="flash"><?=aesc($error)?></div><?php endif;?>
+if($error) admin_notice($error,'error');
+?>
 <style>
 .asset-files-table,.asset-prices-table,.asset-shots-table{table-layout:auto}
 .asset-files-table .asset-description{width:66.666%}.asset-files-table .asset-file{width:33.333%}
