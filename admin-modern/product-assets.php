@@ -41,7 +41,7 @@ function asset_make_thumb(string $dir,string $fullName): string {
     $loader=match($type){IMAGETYPE_JPEG=>'imagecreatefromjpeg',IMAGETYPE_PNG=>'imagecreatefrompng',IMAGETYPE_GIF=>'imagecreatefromgif',defined('IMAGETYPE_WEBP')?IMAGETYPE_WEBP:-1=>'imagecreatefromwebp',default=>null};
     if(!$loader||!function_exists($loader))return $fullName;
     $src=@$loader($srcPath);if(!$src)return $fullName;
-    $maxW=420;$maxH=280;$scale=min($maxW/$w,$maxH/$h,1);$tw=max(1,(int)round($w*$scale));$th=max(1,(int)round($h*$scale));
+    $maxW=160;$maxH=160;$scale=min($maxW/$w,$maxH/$h,1);$tw=max(1,(int)round($w*$scale));$th=max(1,(int)round($h*$scale));
     $dst=imagecreatetruecolor($tw,$th);
     if($type===IMAGETYPE_PNG||$type===IMAGETYPE_GIF){imagealphablending($dst,false);imagesavealpha($dst,true);$transparent=imagecolorallocatealpha($dst,255,255,255,127);imagefilledrectangle($dst,0,0,$tw,$th,$transparent);}
     imagecopyresampled($dst,$src,0,0,0,0,$tw,$th,$w,$h);
@@ -151,7 +151,7 @@ if($error):?><div class="flash"><?=aesc($error)?></div><?php endif;?>
 .asset-file-field{position:relative;display:flex;align-items:stretch}.asset-file-field .input{padding-right:48px}.asset-file-field .asset-file-trigger{position:absolute;right:4px;top:4px;bottom:4px;min-width:36px;padding:0 10px}
 .asset-prices-table .asset-price-title{width:66.666%}.asset-prices-table .asset-price-value{width:33.333%}
 .asset-shots-table .asset-shot{width:240px;min-width:240px}.asset-shots-table .asset-shot-description{width:100%}
-.asset-shot-preview{display:flex;width:240px;height:180px;align-items:center;justify-content:center;overflow:hidden;border-radius:8px;background:var(--panel-soft,#f4f6f8)}
+.asset-shot-preview{display:flex;width:240px;height:180px;align-items:center;justify-content:center;overflow:hidden;border-radius:8px;background:transparent}
 .asset-shot-preview img{display:block;width:240px;height:180px;object-fit:contain}.asset-shot-preview.empty{font-size:13px;color:var(--muted)}
 </style>
 
