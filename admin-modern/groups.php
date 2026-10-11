@@ -97,20 +97,20 @@ admin_header('Группы');
         <a class="btn primary" href="group-edit.php">+ Добавить группу</a>
     </div>
     <style>
-        #groupsTable{table-layout:auto}
-        #groupsTable th,#groupsTable td{text-align:left}
-        #groupsTable th:nth-child(1),#groupsTable td:nth-child(1){width:32%}
-        #groupsTable th:nth-child(2),#groupsTable td:nth-child(2){width:auto}
-        #groupsTable th:nth-child(3),#groupsTable td:nth-child(3),
-        #groupsTable th:nth-child(4),#groupsTable td:nth-child(4),
-        #groupsTable th:nth-child(5),#groupsTable td:nth-child(5){width:1%;white-space:nowrap}
-        #groupsTable td:nth-child(5) .actions{justify-content:flex-start;flex-wrap:nowrap}
-        #groupsTable .products-actions-head,#groupsTable .products-actions-cell{width:1%;min-width:0;text-align:left;white-space:nowrap}
-        #groupsTable .products-actions-cell .actions{justify-content:flex-start;flex-wrap:nowrap}
+        .groups-table{table-layout:auto}
+        .groups-table th,.groups-table td{text-align:left}
+        .groups-table th:nth-child(1),.groups-table td:nth-child(1){width:32%}
+        .groups-table th:nth-child(2),.groups-table td:nth-child(2){width:auto}
+        .groups-table th:nth-child(3),.groups-table td:nth-child(3),
+        .groups-table th:nth-child(4),.groups-table td:nth-child(4),
+        .groups-table th:nth-child(5),.groups-table td:nth-child(5),
+        .groups-table th:nth-child(6),.groups-table td:nth-child(6){width:1%;white-space:nowrap}
+        .groups-table td:nth-child(5) .actions,
+        .groups-table td:nth-child(6) .actions{justify-content:flex-start;flex-wrap:nowrap}
     </style>
     <div class="table-wrap">
-        <table class="table products-table" id="groupsTable">
-            <thead><tr><th>Группа</th><th>Описание</th><th>Продуктов</th><th>Статус</th><th>Сортировка</th><th class="products-actions-head">Действия</th></tr></thead>
+        <table class="table groups-table" id="groupsTable">
+            <thead><tr><th>Группа</th><th>Описание</th><th>Продуктов</th><th>Статус</th><th>Сортировка</th><th>Действия</th></tr></thead>
             <tbody>
             <?php foreach($rows as $i=>$r): $productCount=(int)$r['ProductCount']; $name=a_legacy((string)$r['Name']); ?>
                 <tr data-name="<?=aesc($name)?>">
@@ -128,7 +128,7 @@ admin_header('Группы');
                         </form>
                         <?php else: ?><span class="muted">Нет поля сортировки</span><?php endif; ?>
                     </td>
-                    <td class="products-actions-cell groups-actions-cell">
+                    <td>
                         <div class="actions">
                             <a class="btn" href="group-edit.php?id=<?=(int)$r['ID']?>">Изменить</a>
                             <?php if($productCount>0): ?>
