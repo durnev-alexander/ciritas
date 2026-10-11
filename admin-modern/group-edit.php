@@ -157,7 +157,7 @@ admin_header($id?'Редактирование группы':'Новая гру�
     <div class="table-wrap"><table class="table group-products-table"><thead><tr><th class="group-product-name">Программа</th><th class="group-product-status">Статус</th><th class="group-product-sort">Сортировка</th></tr></thead><tbody>
     <?php foreach($groupProducts as $i=>$product): ?>
         <tr>
-            <td class="group-product-name"><a href="product-edit.php?id=<?=(int)$product['ID']?>"><strong><?=aesc(a_legacy((string)$product['Name']))?></strong></a></td>
+            <td class="group-product-name"><b><?=aesc(a_legacy((string)$product['Name']))?></b></td>
             <td class="group-product-status"><span class="badge <?=$product['IsActive']?'on':'off'?>"><?=$product['IsActive']?'Активна':'Скрыта'?></span></td>
             <td class="group-product-sort">
                 <?php if($productSortColumn!==null): ?>
