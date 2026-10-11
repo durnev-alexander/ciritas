@@ -7,6 +7,7 @@ admin_header('Заказы');
 <div class="card">
     <div class="toolbar">
         <div><h2>Список заказов</h2><div class="help">Полный список заказов через сайт за все время.</div></div>
+        <div class="admin-products-summary">Всего: <?=count($rows)?></div>
     </div>
     <div class="table-wrap"><table class="table"><thead><tr><th>Заказ</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Телефон / E-mail</th><th>Действия</th></tr></thead><tbody>
 <?php foreach($rows as $r):
