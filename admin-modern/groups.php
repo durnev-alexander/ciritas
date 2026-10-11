@@ -98,9 +98,15 @@ admin_header('Группы');
     </div>
     <style>
         #groupsTable{table-layout:auto}
-        #groupsTable th:nth-child(1),#groupsTable td:nth-child(1),#groupsTable th:nth-child(2),#groupsTable td:nth-child(2){width:50%}
-        #groupsTable th:nth-child(n+3),#groupsTable td:nth-child(n+3){width:1%;white-space:nowrap;text-align:right}
-        #groupsTable td:nth-child(5) .actions,#groupsTable td:nth-child(6) .actions{justify-content:flex-end}
+        #groupsTable th,#groupsTable td{text-align:left}
+        #groupsTable th:nth-child(1),#groupsTable td:nth-child(1){width:32%}
+        #groupsTable th:nth-child(2),#groupsTable td:nth-child(2){width:auto}
+        #groupsTable th:nth-child(3),#groupsTable td:nth-child(3),
+        #groupsTable th:nth-child(4),#groupsTable td:nth-child(4),
+        #groupsTable th:nth-child(5),#groupsTable td:nth-child(5){width:1%;white-space:nowrap}
+        #groupsTable td:nth-child(5) .actions{justify-content:flex-start;flex-wrap:nowrap}
+        #groupsTable .products-actions-head,#groupsTable .products-actions-cell{text-align:left}
+        #groupsTable .products-actions-cell .actions{justify-content:flex-start;flex-wrap:nowrap}
     </style>
     <div class="table-wrap">
         <table class="table products-table" id="groupsTable">
