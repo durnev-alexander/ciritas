@@ -108,6 +108,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action']??'')!=='product_sort
             }
         }
 
+        $isNew=$id<1;
         if($id){
             db()->prepare('UPDATE csSoftGroups SET Name=?,Description=?,IsActive=? WHERE ID=?')->execute([$name,$description,$isActive,$id]);
         }else{
@@ -119,7 +120,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action']??'')!=='product_sort
                 db()->prepare('INSERT INTO csSoftGroups (Name,Description,IsActive) VALUES (?,?,?)')->execute([$name,$description,$isActive]);
             }
         }
-        redirect('groups.php');
+        redirect('groups.php'.($isNew?'?added=1':''));
     }catch(Throwable $e){
         $error=$e->getMessage();
     }
