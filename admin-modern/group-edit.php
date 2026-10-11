@@ -146,12 +146,20 @@ admin_header($id?'Редактирование группы':'Новая гру�
 <div id="group-products" class="card" style="margin-top:18px">
     <div class="section-title"><div><h2>Программы группы</h2><div class="help">Программы показаны в порядке их индекса сортировки. Стрелки меняют этот индекс внутри текущей группы.</div></div></div>
     <?php if($groupProducts): ?>
-    <div class="table-wrap"><table class="table"><thead><tr><th>Программа</th><th>Статус</th><th>Сортировка</th></tr></thead><tbody>
+    <style>
+        .group-products-table{table-layout:fixed;width:100%}
+        .group-products-table .group-product-name{width:auto}
+        .group-products-table .group-product-status{width:120px;white-space:nowrap;text-align:right}
+        .group-products-table .group-product-sort{width:92px;white-space:nowrap;text-align:right}
+        .group-products-table .group-product-sort .actions{display:flex;justify-content:flex-end;gap:4px;flex-wrap:nowrap}
+        .group-products-table .group-product-sort .sort-btn{min-width:38px;width:38px;padding-left:0;padding-right:0}
+    </style>
+    <div class="table-wrap"><table class="table group-products-table"><thead><tr><th class="group-product-name">Программа</th><th class="group-product-status">Статус</th><th class="group-product-sort">Сортировка</th></tr></thead><tbody>
     <?php foreach($groupProducts as $i=>$product): ?>
         <tr>
-            <td><a href="product-edit.php?id=<?=(int)$product['ID']?>"><strong><?=aesc(a_legacy((string)$product['Name']))?></strong></a></td>
-            <td><span class="badge <?=$product['IsActive']?'on':'off'?>"><?=$product['IsActive']?'Активна':'Скрыта'?></span></td>
-            <td>
+            <td class="group-product-name"><a href="product-edit.php?id=<?=(int)$product['ID']?>"><strong><?=aesc(a_legacy((string)$product['Name']))?></strong></a></td>
+            <td class="group-product-status"><span class="badge <?=$product['IsActive']?'on':'off'?>"><?=$product['IsActive']?'Активна':'Скрыта'?></span></td>
+            <td class="group-product-sort">
                 <?php if($productSortColumn!==null): ?>
                 <form method="post" class="actions">
                     <input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>">
@@ -160,7 +168,7 @@ admin_header($id?'Редактирование группы':'Новая гру�
                     <button class="btn sort-btn" name="direction" value="up" <?=$i===0?'disabled':''?> title="Выше">↑</button>
                     <button class="btn sort-btn" name="direction" value="down" <?=$i===count($groupProducts)-1?'disabled':''?> title="Ниже">↓</button>
                 </form>
-                <?php else: ?><span class="muted">Нет поля сортировки</span><?php endif; ?>
+                <?php else: ?><span class="muted">—</span><?php endif; ?>
             </td>
         </tr>
     <?php endforeach; ?>
