@@ -4,7 +4,11 @@ $rows=[];
 try{$rows=db()->query('SELECT * FROM csOrders ORDER BY OrderDate DESC, ID DESC LIMIT 200')->fetchAll();}catch(Throwable){}
 admin_header('Заказы');
 ?>
-<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Заказ</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Телефон / E-mail</th><th></th></tr></thead><tbody>
+<div class="card">
+    <div class="toolbar">
+        <div><h2>Список заказов</h2><div class="help">Полный список заказов через сайт за все время.</div></div>
+    </div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Заказ</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Телефон / E-mail</th><th></th></tr></thead><tbody>
 <?php foreach($rows as $r):
 $date=(int)($r['OrderDate']??0);
 $client=trim((string)($r['Organization']??''));
