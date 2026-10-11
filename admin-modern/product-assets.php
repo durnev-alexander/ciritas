@@ -105,10 +105,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 if($fileName==='') throw new RuntimeException('Выберите файл или укажите его имя.');
                 if($downloadSortColumn!==null){
                     $safe='`'.str_replace('`','',$downloadSortColumn).'`';
-                    $q=db()->prepare('SELECT COALESCE(MAX('.$safe.'),0)+10 FROM csSoftDownloads WHERE SoftProductID=?');
-                    $q->execute([$id]);
-                    $next=(int)$q->fetchColumn();
-                    db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive,'.$safe.') VALUES (?,?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0,$next]);
+                    $rows=asset_normalize_downloads($id,$downloadSortColumn);
+                    $position=(int)($_POST['position']??0);
+                    $maxPosition=count($rows)+1;
+                    if($position<1)$position=$maxPosition;
+                    if($position>$maxPosition)$position=$maxPosition;
+                    $update=db()->prepare('UPDATE csSoftDownloads SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');
+                    foreach($rows as $i=>$row){
+                        $place=$i+1;
+                        $sortValue=($place>=$position?$place+1:$place)*10;
+                        $update->execute([$sortValue,(int)$row['ID'],$id]);
+                    }
+                    db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive,'.$safe.') VALUES (?,?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0,$position*10]);
                 }else{
                     db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive) VALUES (?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0]);
                 }
@@ -138,7 +146,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             if($asset){
                 db()->prepare('UPDATE csSoftPrices SET Title=?,Price=? WHERE ID=? AND SoftProductID=?')->execute([$title,$price,$asset,$id]);
             }else{
-                db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price]);
+                db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price,$asset,$id]);
             }
         }elseif($action==='price_delete'&&$asset){
             db()->prepare('DELETE FROM csSoftPrices WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);
@@ -193,11 +201,12 @@ if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 .asset-files-table .asset-active,.asset-files-table .asset-sort,.asset-files-table .asset-action{width:1%;white-space:nowrap}
 .asset-files-table .asset-sort .actions{flex-wrap:nowrap}
 .asset-files-table .asset-action .btn{width:100%}
+.asset-files-table .asset-position{width:72px;min-width:72px;text-align:center}
 .asset-file-picker{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap}
 </style>
 <div class="table-wrap"><table class="table asset-files-table"><thead><tr><th class="asset-description">Описание</th><th class="asset-file">Файл</th><th class="asset-active">Активен</th><th class="asset-sort">Сортировка</th><th class="asset-action" colspan="2">Действия</th></tr></thead><tbody>
 <?php foreach($files as $i=>$f): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$f['ID']?>"><td class="asset-description"><input class="input" name="description" value="<?=aesc(a_legacy($f['Description']??''))?>"></td><td class="asset-file"><input class="input" name="file" value="<?=aesc(a_legacy($f['File']??''))?>"></td><td class="asset-active"><input type="checkbox" name="active" <?=!empty($f['IsActive'])?'checked':''?>></td><td class="asset-sort"><?php if($downloadSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="file_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="file_sort_down" <?=$i===count($files)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-action"><button class="btn" name="action" value="file_save">Сохранить</button></td><td class="asset-action"><button class="btn danger" name="action" value="file_delete" onclick="return confirm('Удалить запись о файле?')">Удалить</button></td></form></tr><?php endforeach; ?>
-<tr><form method="post" enctype="multipart/form-data" id="newDownloadForm"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="file_save"><td class="asset-description"><input class="input" name="description" placeholder="Описание загрузки"></td><td class="asset-file"><input class="input" id="newDownloadFileName" name="file" placeholder="Имя файла в Uploads"></td><td class="asset-active"><input type="checkbox" name="active" checked></td><td class="asset-sort"><span class="muted">—</span></td><td class="asset-action"><label class="btn" for="newDownloadUpload">Выбрать</label><input class="asset-file-picker" id="newDownloadUpload" type="file" name="upload"></td><td class="asset-action"><button class="btn primary">Добавить</button></td></form></tr>
+<tr><form method="post" enctype="multipart/form-data" id="newDownloadForm"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="file_save"><td class="asset-description"><input class="input" name="description" placeholder="Описание загрузки"></td><td class="asset-file"><input class="input" id="newDownloadFileName" name="file" placeholder="Имя файла в Uploads"></td><td class="asset-active"><input type="checkbox" name="active" checked></td><td class="asset-sort"><input class="input asset-position" type="number" name="position" min="1" max="<?=count($files)+1?>" value="<?=count($files)+1?>" title="Место в списке"></td><td class="asset-action"><label class="btn" for="newDownloadUpload">Выбрать</label><input class="asset-file-picker" id="newDownloadUpload" type="file" name="upload"></td><td class="asset-action"><button class="btn primary">Добавить</button></td></form></tr>
 </tbody></table></div></div>
 <script>(function(){var picker=document.getElementById('newDownloadUpload');var name=document.getElementById('newDownloadFileName');if(!picker||!name)return;picker.addEventListener('change',function(){if(picker.files&&picker.files[0])name.value=picker.files[0].name;});})();</script>
 
