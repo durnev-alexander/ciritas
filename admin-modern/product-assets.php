@@ -146,7 +146,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             if($asset){
                 db()->prepare('UPDATE csSoftPrices SET Title=?,Price=? WHERE ID=? AND SoftProductID=?')->execute([$title,$price,$asset,$id]);
             }else{
-                db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price,$asset,$id]);
+                db()->prepare('INSERT INTO csSoftPrices (SoftProductID,Title,Price) VALUES (?,?,?)')->execute([$id,$title,$price]);
             }
         }elseif($action==='price_delete'&&$asset){
             db()->prepare('DELETE FROM csSoftPrices WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);
