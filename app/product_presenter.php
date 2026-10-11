@@ -9,40 +9,68 @@ function product_list_html(?string $value): string {
     return $html;
 }
 
+function product_shots_columns(): array {
+    static $columns = null;
+    if ($columns !== null) return $columns;
+    $columns = [];
+    try {
+        foreach (db()->query('SHOW COLUMNS FROM csSoftShots')->fetchAll() as $col) {
+            $name = (string)($col['Field'] ?? '');
+            if ($name !== '') $columns[] = $name;
+        }
+    } catch (Throwable) {}
+    return $columns;
+}
+
 function product_shots_order_column(): ?string {
     static $resolved = false;
     static $column = null;
     if ($resolved) return $column;
     $resolved = true;
-    try {
-        $cols = db()->query('SHOW COLUMNS FROM csSoftShots')->fetchAll();
-        $names = [];
-        foreach ($cols as $col) {
-            $name = (string)($col['Field'] ?? '');
-            if ($name !== '') $names[] = $name;
-        }
-        foreach (['OrderIndex','SortOrder','SortIndex','Position','OrderNum','OrderID','Sort'] as $candidate) {
-            foreach ($names as $name) {
-                if (strcasecmp($name, $candidate) === 0) {
-                    $column = $name;
-                    return $column;
-                }
-            }
-        }
+    $names = product_shots_columns();
+    foreach (['OrderIndex','SortOrder','SortIndex','Position','OrderNum','OrderID','Sort'] as $candidate) {
         foreach ($names as $name) {
-            if (in_array(strtolower($name), ['id','softproductid'], true)) continue;
-            if (preg_match('/(order|sort|position|index)/i', $name)) {
+            if (strcasecmp($name, $candidate) === 0) {
                 $column = $name;
                 return $column;
             }
         }
-    } catch (Throwable) {}
+    }
+    foreach ($names as $name) {
+        if (in_array(strtolower($name), ['id','softproductid'], true)) continue;
+        if (preg_match('/(order|sort|position|index)/i', $name)) {
+            $column = $name;
+            return $column;
+        }
+    }
+    return null;
+}
+
+function product_shots_active_column(): ?string {
+    static $resolved = false;
+    static $column = null;
+    if ($resolved) return $column;
+    $resolved = true;
+    $names = product_shots_columns();
+    foreach (['IsActive','Active','IsEnabled','Enabled'] as $candidate) {
+        foreach ($names as $name) {
+            if (strcasecmp($name, $candidate) === 0) {
+                $column = $name;
+                return $column;
+            }
+        }
+    }
     return null;
 }
 
 function product_shots_order_sql(): string {
     $column = product_shots_order_column();
     return $column !== null ? '`'.str_replace('`','',$column).'`, ID' : 'ID';
+}
+
+function product_shots_active_sql(): string {
+    $column = product_shots_active_column();
+    return $column !== null ? ' AND `'.str_replace('`','',$column).'`=1' : '';
 }
 
 function product_photo_asset_url(string $file): string {
@@ -52,7 +80,6 @@ function product_photo_asset_url(string $file): string {
     $isHttps = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
         || (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
 
-    // Некоторые старые записи могут уже содержать абсолютный URL.
     if (preg_match('~^https?://~i', $file)) {
         if ($isHttps && str_starts_with(strtolower($file), 'http://')) {
             $file = 'https://'.substr($file, 7);
@@ -66,7 +93,6 @@ function product_photo_asset_url(string $file): string {
         $base = 'https://'.substr($base, 7);
     }
 
-    // Кодируем сегменты отдельно, сохраняя подпапки в старых путях.
     $path = str_replace('\\','/',$file);
     $segments = array_map('rawurlencode', array_filter(explode('/', ltrim($path,'/')), static fn($v) => $v !== ''));
     return rtrim($base,'/').'/'.implode('/',$segments);
@@ -80,16 +106,13 @@ function product_image_url(array $product): string {
     if (!array_key_exists($id, $shotCache)) {
         $shotCache[$id] = '';
         try {
-            $sql = 'SELECT FileThumb,FileFull FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql().' LIMIT 1';
+            $sql = 'SELECT FileThumb,FileFull FROM csSoftShots WHERE SoftProductID=?'.product_shots_active_sql().' ORDER BY '.product_shots_order_sql().' LIMIT 1';
             $q = db()->prepare($sql);
             $q->execute([$id]);
             $shot = $q->fetch();
             if ($shot) {
-                // На старом сайте первой в сортировке идёт загрузочная картинка продукта.
                 $file = trim(legacy((string)($shot['FileFull'] ?: $shot['FileThumb'] ?: '')));
-                if ($file !== '') {
-                    $shotCache[$id] = product_photo_asset_url($file);
-                }
+                if ($file !== '') $shotCache[$id] = product_photo_asset_url($file);
             }
         } catch (Throwable) {}
     }
