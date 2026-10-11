@@ -201,7 +201,7 @@ if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 .asset-files-table .asset-active,.asset-files-table .asset-sort,.asset-files-table .asset-action{width:1%;white-space:nowrap}
 .asset-files-table .asset-sort .actions{flex-wrap:nowrap}
 .asset-files-table .asset-action .btn{width:100%}
-.asset-files-table .asset-position{width:72px;min-width:72px;text-align:center}
+.asset-files-table .asset-position{width:100%;min-width:0;box-sizing:border-box;text-align:center}
 .asset-file-picker{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap}
 </style>
 <div class="table-wrap"><table class="table asset-files-table"><thead><tr><th class="asset-description">Описание</th><th class="asset-file">Файл</th><th class="asset-active">Активен</th><th class="asset-sort">Сортировка</th><th class="asset-action" colspan="2">Действия</th></tr></thead><tbody>
