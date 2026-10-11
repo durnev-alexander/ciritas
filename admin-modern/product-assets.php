@@ -205,17 +205,62 @@ if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 .asset-prices-table .asset-price-sort,.asset-prices-table .asset-price-action{width:1%;white-space:nowrap}
 </style>
 <div class="table-wrap"><table class="table asset-files-table"><thead><tr><th class="asset-description">Описание</th><th class="asset-file">Файл</th><th class="asset-active">Активен</th><th class="asset-sort">Сортировка</th><th class="asset-action">Действия</th></tr></thead><tbody>
-<?php foreach($files as $i=>$f): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$f['ID']?>"><td class="asset-description"><input class="input" name="description" value="<?=aesc(a_legacy($f['Description']??''))?>"></td><td class="asset-file"><input class="input" name="file" value="<?=aesc(a_legacy($f['File']??''))?>"></td><td class="asset-active"><input type="checkbox" name="active" <?=!empty($f['IsActive'])?'checked':''?>></td><td class="asset-sort"><?php if($downloadSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="file_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="file_sort_down" <?=$i===count($files)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-action"><div class="actions"><button class="btn" name="action" value="file_save">Сохранить</button><button class="btn danger" name="action" value="file_delete" onclick="return confirm('Удалить запись о файле?')">Удалить</button></div></td></form></tr><?php endforeach; ?>
+<?php foreach($files as $i=>$f): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$f['ID']?>"><td class="asset-description"><input class="input" name="description" value="<?=aesc(a_legacy($f['Description']??''))?>"></td><td class="asset-file"><input class="input" name="file" value="<?=aesc(a_legacy($f['File']??''))?>"></td><td class="asset-active"><input type="checkbox" name="active" <?=!empty($f['IsActive'])?'checked':''?>></td><td class="asset-sort"><?php if($downloadSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="file_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="file_sort_down" <?=$i===count($files)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-action"><div class="actions"><button class="btn" name="action" value="file_save">Сохранить</button><button class="btn danger js-asset-delete" type="button" data-delete-action="file_delete" data-asset-id="<?=(int)$f['ID']?>" data-asset-label="<?=aesc(a_legacy((string)($f['Description']??$f['File']??'')))?>">Удалить</button></div></td></form></tr><?php endforeach; ?>
 <tr><form method="post" enctype="multipart/form-data" id="newDownloadForm"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="file_save"><td class="asset-description"><input class="input" name="description" placeholder="Описание загрузки"></td><td class="asset-file"><input class="input" id="newDownloadFileName" name="file" placeholder="Имя файла в Uploads"></td><td class="asset-active"><input type="checkbox" name="active" checked></td><td class="asset-sort"><input class="input asset-position" type="number" name="position" min="1" max="<?=count($files)+1?>" value="<?=count($files)+1?>" title="Место в списке"></td><td class="asset-action"><div class="actions"><label class="btn" for="newDownloadUpload">Выбрать</label><input class="asset-file-picker" id="newDownloadUpload" type="file" name="upload"><button class="btn primary">Добавить</button></div></td></form></tr>
 </tbody></table></div></div>
 <script>(function(){var picker=document.getElementById('newDownloadUpload');var name=document.getElementById('newDownloadFileName');if(!picker||!name)return;picker.addEventListener('change',function(){if(picker.files&&picker.files[0])name.value=picker.files[0].name;});})();</script>
 
 <div class="card" style="margin-top:18px">
-<div class="section-title" style="margin-bottom:16px"><div><h2>Цены</h2><div class="help">Здесь укажите все виды лицензий и их цены</div></div><div class="admin-products-summary">Всего: <?=count($prices)?></div></div>
+<div class="section-title" style="margin-bottom:16px"><div><h2>Цены на лицензии</h2><div class="help">Здесь укажите все виды лицензий и их цены</div></div><div class="admin-products-summary">Всего: <?=count($prices)?></div></div>
 <div class="table-wrap"><table class="table asset-prices-table"><thead><tr><th class="asset-price-title">Название</th><th class="asset-price-value">Цена</th><th class="asset-price-sort">Сортировка</th><th class="asset-price-action">Действия</th></tr></thead><tbody>
-<?php foreach($prices as $i=>$pr): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$pr['ID']?>"><td class="asset-price-title"><input class="input" name="title" value="<?=aesc(a_legacy($pr['Title']??''))?>"></td><td class="asset-price-value"><input class="input" name="price" inputmode="decimal" value="<?=aesc((string)($pr['Price']??''))?>"></td><td class="asset-price-sort"><?php if($priceSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="price_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="price_sort_down" <?=$i===count($prices)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-price-action"><div class="actions"><button class="btn" name="action" value="price_save">Сохранить</button><button class="btn danger" name="action" value="price_delete" onclick="return confirm('Удалить цену?')">Удалить</button></div></td></form></tr><?php endforeach; ?>
+<?php foreach($prices as $i=>$pr): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$pr['ID']?>"><td class="asset-price-title"><input class="input" name="title" value="<?=aesc(a_legacy($pr['Title']??''))?>"></td><td class="asset-price-value"><input class="input" name="price" inputmode="decimal" value="<?=aesc((string)($pr['Price']??''))?>"></td><td class="asset-price-sort"><?php if($priceSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="price_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="price_sort_down" <?=$i===count($prices)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-price-action"><div class="actions"><button class="btn" name="action" value="price_save">Сохранить</button><button class="btn danger js-asset-delete" type="button" data-delete-action="price_delete" data-asset-id="<?=(int)$pr['ID']?>" data-asset-label="<?=aesc(a_legacy((string)($pr['Title']??'')))?>">Удалить</button></div></td></form></tr><?php endforeach; ?>
 <tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><td class="asset-price-title"><input class="input" name="title" placeholder="Название лицензии"></td><td class="asset-price-value"><input class="input" name="price" inputmode="decimal" value="0"></td><td class="asset-price-sort"><input class="input asset-price-position" type="number" name="position" min="1" max="<?=count($prices)+1?>" value="<?=count($prices)+1?>" title="Место в списке"></td><td class="asset-price-action"><div class="actions"><button class="btn primary">Добавить</button></div></td></form></tr>
 </tbody></table></div></div>
+
+<div id="assetDeleteModal" class="admin-modal" hidden aria-hidden="true">
+    <div class="admin-modal-backdrop" data-modal-close></div>
+    <div class="admin-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="assetDeleteTitle">
+        <h2 id="assetDeleteTitle">Подтверждение удаления</h2>
+        <p><span id="assetDeleteQuestion">Удалить запись?</span><span id="assetDeleteLabel" class="admin-modal-product"></span></p>
+        <form method="post" class="admin-modal-actions">
+            <input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>">
+            <input type="hidden" id="assetDeleteAction" name="action" value="">
+            <input type="hidden" id="assetDeleteId" name="asset_id" value="">
+            <button class="btn" type="button" data-modal-close>Отмена</button>
+            <button class="btn" type="submit">Удалить</button>
+        </form>
+    </div>
+</div>
+<script>(function(){
+var modal=document.getElementById('assetDeleteModal');
+var actionInput=document.getElementById('assetDeleteAction');
+var idInput=document.getElementById('assetDeleteId');
+var question=document.getElementById('assetDeleteQuestion');
+var label=document.getElementById('assetDeleteLabel');
+var lastTrigger=null;
+function openModal(button){
+    lastTrigger=button;
+    var action=button.dataset.deleteAction||'';
+    actionInput.value=action;
+    idInput.value=button.dataset.assetId||'';
+    question.textContent=action==='price_delete'?'Удалить цену/лицензию?':'Удалить запись о файле?';
+    label.textContent=button.dataset.assetLabel||'';
+    modal.hidden=false;
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('admin-modal-open');
+    var cancel=modal.querySelector('[data-modal-close]');
+    if(cancel)cancel.focus();
+}
+function closeModal(){
+    modal.hidden=true;
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('admin-modal-open');
+    if(lastTrigger)lastTrigger.focus();
+}
+document.querySelectorAll('.js-asset-delete').forEach(function(button){button.addEventListener('click',function(){openModal(button);});});
+modal.querySelectorAll('[data-modal-close]').forEach(function(button){button.addEventListener('click',closeModal);});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!modal.hidden)closeModal();});
+})();</script>
 
 <div class="card" style="margin-top:18px"><div class="section-title"><div><h2>Скриншоты</h2><div class="help">Порядок совпадает со старой сортировкой сайта: первая запись используется как картинка программы в списках. Новые скриншоты автоматически добавляются в конец. В админке показывается полноразмерное изображение.</div></div></div><div class="shot-grid"><?php foreach($shots as $s): ?><?php $full=a_legacy((string)($s['FileFull']??'')); $thumb=a_legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; ?><form method="post" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_save"><input type="hidden" name="asset_id" value="<?=$s['ID']?>"><?php if($preview!==''): ?><a class="shot-preview" href="<?=aesc(asset_photo_url($preview))?>" target="_blank"><img src="<?=aesc(asset_photo_url($preview))?>" alt=""></a><div class="help" style="margin-bottom:8px"><?=aesc($preview)?></div><?php else: ?><div class="shot-preview empty">Нет изображения</div><?php endif; ?><input class="input" name="title" value="<?=aesc(a_legacy($s['Name']??''))?>" placeholder="Название"><div class="actions" style="margin-top:10px"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="shot_delete" onclick="return confirm('Удалить запись о скриншоте?')">Удалить</button></div></form><?php endforeach; ?><form method="post" enctype="multipart/form-data" class="shot-card"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="shot_add"><div class="upload-box">Новый скриншот</div><input class="input" name="title" placeholder="Название"><input type="file" name="shot" accept="image/jpeg,image/png,image/gif,image/webp" required style="margin-top:10px"><button class="btn primary" style="margin-top:10px">Загрузить</button></form></div></div>
 
