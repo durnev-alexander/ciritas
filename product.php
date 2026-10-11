@@ -21,7 +21,7 @@ try {
 
 $shots=[];
 try {
-    $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());
+    $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=?'.product_shots_active_sql().' ORDER BY '.product_shots_order_sql());
     $q->execute([$id]);
     $shots=$q->fetchAll();
 } catch(Throwable) {}
@@ -29,13 +29,9 @@ try {
 function product_html(?string $value): string {
     $html = legacy($value ?? '');
     if ($html === '') return '';
-
-    // Часть старых записей хранит HTML-теги как сущности (&lt;...&gt;).
-    // Декодируем их, чтобы на новом сайте применялось исходное форматирование.
     if (str_contains($html, '&lt;') || str_contains($html, '&gt;')) {
         $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
-
     return $html;
 }
 
