@@ -54,7 +54,38 @@ function asset_make_thumb(string $dir,string $fullName): string {
 function asset_photo_url(string $file): string {
     return product_photo_asset_url($file);
 }
+function asset_sort_column(string $table): ?string {
+    try{
+        $cols=db()->query('SHOW COLUMNS FROM `'.str_replace('`','',$table).'`')->fetchAll();
+        $names=[];
+        foreach($cols as $col){$name=(string)($col['Field']??'');if($name!=='')$names[]=$name;}
+        foreach(['OrderIndex','SortOrder','SortIndex','Position','OrderNum','OrderID','Sort','Order'] as $candidate){
+            foreach($names as $name){if(strcasecmp($name,$candidate)===0)return $name;}
+        }
+        foreach($names as $name){
+            if(in_array(strtolower($name),['id','softproductid'],true))continue;
+            if(preg_match('/(order|sort|position|index)/i',$name))return $name;
+        }
+    }catch(Throwable){}
+    return null;
+}
+function asset_normalize_downloads(int $productId,string $column): array {
+    $safe='`'.str_replace('`','',$column).'`';
+    $q=db()->prepare('SELECT ID,'.$safe.' SortValue FROM csSoftDownloads WHERE SoftProductID=? ORDER BY '.$safe.',ID');
+    $q->execute([$productId]);
+    $rows=$q->fetchAll();
+    $update=db()->prepare('UPDATE csSoftDownloads SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');
+    $pos=10;
+    foreach($rows as &$row){
+        $row['SortValue']=$pos;
+        $update->execute([$pos,(int)$row['ID'],$productId]);
+        $pos+=10;
+    }
+    unset($row);
+    return $rows;
+}
 
+$downloadSortColumn=asset_sort_column('csSoftDownloads');
 $error='';
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_check();
@@ -72,10 +103,34 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 db()->prepare('UPDATE csSoftDownloads SET Description=?,File=?,IsActive=? WHERE ID=? AND SoftProductID=?')->execute([$description,$dbFile,isset($_POST['active'])?1:0,$asset,$id]);
             }else{
                 if($fileName==='') throw new RuntimeException('Выберите файл или укажите его имя.');
-                db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive) VALUES (?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0]);
+                if($downloadSortColumn!==null){
+                    $safe='`'.str_replace('`','',$downloadSortColumn).'`';
+                    $q=db()->prepare('SELECT COALESCE(MAX('.$safe.'),0)+10 FROM csSoftDownloads WHERE SoftProductID=?');
+                    $q->execute([$id]);
+                    $next=(int)$q->fetchColumn();
+                    db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive,'.$safe.') VALUES (?,?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0,$next]);
+                }else{
+                    db()->prepare('INSERT INTO csSoftDownloads (SoftProductID,Description,File,IsActive) VALUES (?,?,?,?)')->execute([$id,$description,$dbFile,isset($_POST['active'])?1:0]);
+                }
+            }
+        }elseif(($action==='file_sort_up'||$action==='file_sort_down')&&$asset){
+            if($downloadSortColumn===null) throw new RuntimeException('В таблице файлов не найдено поле индекса сортировки.');
+            $rows=asset_normalize_downloads($id,$downloadSortColumn);
+            $index=null;
+            foreach($rows as $i=>$row){if((int)$row['ID']===$asset){$index=$i;break;}}
+            if($index!==null){
+                $other=$action==='file_sort_up'?$index-1:$index+1;
+                if(isset($rows[$other])){
+                    $a=$rows[$index];$b=$rows[$other];
+                    $safe='`'.str_replace('`','',$downloadSortColumn).'`';
+                    $q=db()->prepare('UPDATE csSoftDownloads SET '.$safe.'=? WHERE ID=? AND SoftProductID=?');
+                    $q->execute([(int)$b['SortValue'],(int)$a['ID'],$id]);
+                    $q->execute([(int)$a['SortValue'],(int)$b['ID'],$id]);
+                }
             }
         }elseif($action==='file_delete'&&$asset){
             db()->prepare('DELETE FROM csSoftDownloads WHERE ID=? AND SoftProductID=?')->execute([$asset,$id]);
+            if($downloadSortColumn!==null) asset_normalize_downloads($id,$downloadSortColumn);
         }elseif($action==='price_save'){
             $title=asset_db_text((string)($_POST['title']??''));
             $price=str_replace(',','.',trim((string)($_POST['price']??'0')));
@@ -112,7 +167,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $files=[];$prices=[];$shots=[];
-try{$q=db()->prepare('SELECT * FROM csSoftDownloads WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$files=$q->fetchAll();}catch(Throwable){}
+try{
+    $order=$downloadSortColumn!==null?'`'.str_replace('`','',$downloadSortColumn).'`,ID':'ID';
+    $q=db()->prepare('SELECT * FROM csSoftDownloads WHERE SoftProductID=? ORDER BY '.$order);
+    $q->execute([$id]);
+    $files=$q->fetchAll();
+}catch(Throwable){}
 try{$q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? ORDER BY ID');$q->execute([$id]);$prices=$q->fetchAll();}catch(Throwable){}
 try{
     $q=db()->prepare('SELECT * FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql());
@@ -126,9 +186,14 @@ admin_header('Ресурсы: '.a_legacy($p['Name']));
 if($error): ?><div class="flash"><?=aesc($error)?></div><?php endif; ?>
 <div class="card">
 <div class="section-title" style="margin-bottom:16px"><div><h2>Файлы для скачивания</h2><div class="help">Можно загрузить новый файл в каталог Uploads или оставить существующее имя файла.</div></div></div>
-<div class="table-wrap"><table class="table"><thead><tr><th>Описание</th><th>Файл</th><th>Активен</th><th></th></tr></thead><tbody>
-<?php foreach($files as $f): ?><tr><form method="post" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="file_save"><input type="hidden" name="asset_id" value="<?=$f['ID']?>"><td><textarea class="textarea" name="description" rows="3"><?=aesc(a_legacy($f['Description']??''))?></textarea></td><td><input class="input" name="file" value="<?=aesc(a_legacy($f['File']??''))?>"><div class="help" style="margin-top:6px">Заменить файлом:</div><input type="file" name="upload"></td><td><input type="checkbox" name="active" <?=!empty($f['IsActive'])?'checked':''?>></td><td><div class="actions"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="file_delete" onclick="return confirm('Удалить запись о файле?')">Удалить</button></div></td></form></tr><?php endforeach; ?>
-<tr><form method="post" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="file_save"><td><textarea class="textarea" name="description" rows="3" placeholder="Описание загрузки"></textarea></td><td><input class="input" name="file" placeholder="Имя уже существующего файла"><div class="help" style="margin:6px 0">или загрузить:</div><input type="file" name="upload"></td><td><input type="checkbox" name="active" checked></td><td><button class="btn primary">Добавить</button></td></form></tr>
+<style>
+.asset-files-table{table-layout:auto}
+.asset-files-table .asset-active,.asset-files-table .asset-sort,.asset-files-table .asset-actions{width:1%;white-space:nowrap}
+.asset-files-table .asset-sort .actions,.asset-files-table .asset-actions .actions{flex-wrap:nowrap}
+</style>
+<div class="table-wrap"><table class="table asset-files-table"><thead><tr><th>Описание</th><th>Файл</th><th class="asset-active">Активен</th><th class="asset-sort">Сортировка</th><th class="asset-actions">Действия</th></tr></thead><tbody>
+<?php foreach($files as $i=>$f): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="asset_id" value="<?=$f['ID']?>"><td><input class="input" name="description" value="<?=aesc(a_legacy($f['Description']??''))?>"></td><td><input class="input" name="file" value="<?=aesc(a_legacy($f['File']??''))?>"></td><td class="asset-active"><input type="checkbox" name="active" <?=!empty($f['IsActive'])?'checked':''?>></td><td class="asset-sort"><?php if($downloadSortColumn!==null): ?><div class="actions"><button class="btn sort-btn" name="action" value="file_sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" name="action" value="file_sort_down" <?=$i===count($files)-1?'disabled':''?> title="Ниже">↓</button></div><?php else: ?><span class="muted">—</span><?php endif; ?></td><td class="asset-actions"><div class="actions"><button class="btn" name="action" value="file_save">Сохранить</button><button class="btn danger" name="action" value="file_delete" onclick="return confirm('Удалить запись о файле?')">Удалить</button></div></td></form></tr><?php endforeach; ?>
+<tr><form method="post" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="file_save"><td><input class="input" name="description" placeholder="Описание загрузки"></td><td><input class="input" name="file" placeholder="Имя уже существующего файла"><div class="help" style="margin:6px 0">или загрузить:</div><input type="file" name="upload"></td><td class="asset-active"><input type="checkbox" name="active" checked></td><td class="asset-sort"><span class="muted">—</span></td><td class="asset-actions"><button class="btn primary">Добавить</button></td></form></tr>
 </tbody></table></div></div>
 
 <div class="card" style="margin-top:18px"><h2>Цены</h2><div class="table-wrap"><table class="table"><thead><tr><th>Название</th><th>Цена</th><th></th></tr></thead><tbody><?php foreach($prices as $pr): ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><input type="hidden" name="asset_id" value="<?=$pr['ID']?>"><td><input class="input" name="title" value="<?=aesc(a_legacy($pr['Title']??''))?>"></td><td><input class="input" name="price" inputmode="decimal" value="<?=aesc((string)($pr['Price']??''))?>"></td><td><div class="actions"><button class="btn">Сохранить</button><button class="btn danger" name="action" value="price_delete" onclick="return confirm('Удалить цену?')">Удалить</button></div></td></form></tr><?php endforeach; ?><tr><form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="price_save"><td><input class="input" name="title" placeholder="Название лицензии"></td><td><input class="input" name="price" inputmode="decimal" value="0"></td><td><button class="btn primary">Добавить</button></td></form></tr></tbody></table></div></div>
