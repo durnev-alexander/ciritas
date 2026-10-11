@@ -148,10 +148,12 @@ admin_header($id?'Редактирование группы':'Новая гру�
     <?php if($groupProducts): ?>
     <style>
         .group-products-table{table-layout:fixed;width:100%}
+        .group-products-table th{text-align:left}
         .group-products-table .group-product-name{width:auto}
-        .group-products-table .group-product-status{width:120px;white-space:nowrap;text-align:right}
-        .group-products-table .group-product-sort{width:92px;white-space:nowrap;text-align:right}
-        .group-products-table .group-product-sort .actions{display:flex;justify-content:flex-end;gap:4px;flex-wrap:nowrap}
+        .group-products-table .group-product-status{width:160px;min-width:160px;white-space:nowrap;text-align:left;padding-left:18px;padding-right:18px}
+        .group-products-table .group-product-sort{width:132px;min-width:132px;white-space:nowrap;text-align:left;padding-left:18px;padding-right:18px}
+        .group-products-table td.group-product-sort{text-align:right}
+        .group-products-table .group-product-sort .actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:nowrap}
         .group-products-table .group-product-sort .sort-btn{min-width:38px;width:38px;padding-left:0;padding-right:0}
     </style>
     <div class="table-wrap"><table class="table group-products-table"><thead><tr><th class="group-product-name">Программа</th><th class="group-product-status">Статус</th><th class="group-product-sort">Сортировка</th></tr></thead><tbody>
