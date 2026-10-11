@@ -152,7 +152,7 @@ admin_header('Продукты');
 </div>
 
 <div id="home-products" class="card products-tools-card">
-<div class="section-title" style="margin-bottom:16px"><div><h2>Продукты на главной</h2><div class="help">Состав и порядок программ, которые показываются на главной странице публичного сайта.</div></div></div>
+<div class="section-title" style="margin-bottom:16px"><div><h2>Продукты на главной</h2><div class="help">Состав и порядок программ, которые показываются на главной странице публичного сайта.</div></div><div class="admin-products-summary">Всего: <?=count($current)?></div></div>
 <style>
 .home-products-table .home-products-number{width:1%;white-space:nowrap}
 .home-products-table .home-products-name{width:100%}
