@@ -120,7 +120,8 @@ if($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action']??'')!=='product_sort
                 db()->prepare('INSERT INTO csSoftGroups (Name,Description,IsActive) VALUES (?,?,?)')->execute([$name,$description,$isActive]);
             }
         }
-        redirect('groups.php'.($isNew?'?added=1':''));
+        if($isNew) admin_set_notice('Группа добавлена.','success');
+        redirect('groups.php');
     }catch(Throwable $e){
         $error=$e->getMessage();
     }
