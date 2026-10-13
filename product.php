@@ -64,11 +64,13 @@ function product_html_has_content(string $html): bool {
 
 function product_html_trim_trailing_empty(string $html): string {
     $html=rtrim($html);
-    $emptyInline='(?:\s|&nbsp;|&#160;|&#x0*a0;|<br\s*/?>)*';
+    $emptyInline='(?:\s|&nbsp;|&#160;|&#x0*a0;|<br\s*\/?>)*';
     $emptyBlock='<(p|div|span)\b[^>]*>'.$emptyInline.'<\/\1>';
     do {
         $before=$html;
-        $html=preg_replace('/'.$emptyInline.'(?:'.$emptyBlock.'|<br\s*\/?>)'.$emptyInline.'$/iu','',$html)??$html;
+        $pattern='~'.$emptyInline.'(?:'.$emptyBlock.'|<br\s*/?>)'.$emptyInline.'$~iu';
+        $clean=preg_replace($pattern,'',$html);
+        if(is_string($clean)) $html=$clean;
         $html=rtrim($html);
     } while($html!==$before);
     return $html;
