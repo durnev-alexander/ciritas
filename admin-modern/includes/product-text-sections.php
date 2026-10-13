@@ -118,6 +118,23 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
         }
         return value;
     }
+    function stripLegacyBackgrounds(value){
+        var template=document.createElement('template');
+        template.innerHTML=value||'';
+        template.content.querySelectorAll('*').forEach(function(el){
+            el.removeAttribute('bgcolor');
+            el.removeAttribute('background');
+            if(!el.hasAttribute('style'))return;
+            var props=[];
+            for(var i=0;i<el.style.length;i++){
+                var name=el.style[i];
+                if(name&&name.toLowerCase().indexOf('background')===0)props.push(name);
+            }
+            props.forEach(function(name){el.style.removeProperty(name);});
+            if((el.getAttribute('style')||'').trim()==='')el.removeAttribute('style');
+        });
+        return template.innerHTML;
+    }
     function escapeHtml(value){
         return String(value||'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});
     }
@@ -125,7 +142,7 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
         return document.documentElement.dataset.theme==='light'?'light':'dark';
     }
     function previewDocument(title,content){
-        content=decodeHtml(content);
+        content=stripLegacyBackgrounds(decodeHtml(content));
         var dark=previewTheme()==='dark';
         var text=dark?'#e8eef5':'#17283c';
         var muted=dark?'#91a3b3':'#8290a1';
@@ -154,7 +171,7 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
         }
     }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
     function setEditorContent(value){
-        value=decodeHtml(value);
+        value=stripLegacyBackgrounds(decodeHtml(value));
         editorText.value=value;
         if(window.tinymce){var ed=tinymce.get('productTextEditorContent');if(ed)ed.setContent(value,{format:'html'});}
     }
