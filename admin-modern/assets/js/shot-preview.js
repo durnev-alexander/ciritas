@@ -1,4 +1,34 @@
 (function(){
+    var frames=[].slice.call(document.querySelectorAll('.js-text-section-preview-frame'));
+    if(!frames.length) return;
+
+    var cropStyle=document.createElement('style');
+    cropStyle.textContent='.text-section-preview .js-text-section-preview-frame{width:512px!important;overflow:hidden!important}';
+    document.head.appendChild(cropStyle);
+
+    var gutterCss='<style id="ciritas-preview-gutter-style">html{width:512px!important;min-width:512px!important;max-width:512px!important;overflow-y:scroll!important;overflow-x:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important}html::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}body{width:480px!important;min-width:480px!important;max-width:480px!important;overflow:visible!important}</style>';
+
+    function applyPreviewGutter(frame){
+        if(!frame) return;
+        frame.setAttribute('scrolling','no');
+        var source=frame.srcdoc||'';
+        if(source===''||source.indexOf('ciritas-preview-gutter-style')!==-1) return;
+        if(source.indexOf('</head>')!==-1) source=source.replace('</head>',gutterCss+'</head>');
+        else source=gutterCss+source;
+        frame.srcdoc=source;
+    }
+
+    frames.forEach(function(frame){
+        applyPreviewGutter(frame);
+        new MutationObserver(function(mutations){
+            mutations.forEach(function(mutation){
+                if(mutation.attributeName==='srcdoc') setTimeout(function(){applyPreviewGutter(frame);},0);
+            });
+        }).observe(frame,{attributes:true,attributeFilter:['srcdoc']});
+    });
+})();
+
+(function(){
     var links=[].slice.call(document.querySelectorAll('.asset-shot-preview[href]'));
     if(!links.length) return;
 
