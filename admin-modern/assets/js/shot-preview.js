@@ -6,7 +6,7 @@
     cropStyle.textContent='.text-section-preview .js-text-section-preview-frame{width:512px!important;overflow:hidden!important}';
     document.head.appendChild(cropStyle);
 
-    var gutterCss='<style id="ciritas-preview-gutter-style">html{width:512px!important;min-width:512px!important;max-width:512px!important;overflow-y:scroll!important;overflow-x:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important}html::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}body{width:480px!important;min-width:480px!important;max-width:480px!important;overflow:visible!important}</style>';
+    var gutterCss='<style id="ciritas-preview-gutter-style">html{width:512px!important;min-width:512px!important;max-width:512px!important;overflow:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}body{width:472px!important;min-width:472px!important;max-width:472px!important;overflow:visible!important;padding-right:18px!important}</style>';
 
     function applyPreviewGutter(frame){
         if(!frame) return;
