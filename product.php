@@ -27,13 +27,39 @@ try {
     $shots=$q->fetchAll();
 } catch(Throwable) {}
 
+function product_html_remove_backgrounds(string $html): string {
+    $clean=preg_replace('/\s(?:bgcolor|background)\s*=\s*(["\']).*?\1/isu','',$html);
+    if(is_string($clean)) $html=$clean;
+    $clean=preg_replace('/\s(?:bgcolor|background)\s*=\s*[^\s>]+/iu','',$html);
+    if(is_string($clean)) $html=$clean;
+    $clean=preg_replace_callback('/\sstyle\s*=\s*(["\'])(.*?)\1/isu',function(array $match): string {
+        $style=(string)$match[2];
+        $without=preg_replace('/(?:^|;)\s*background(?:-[a-z-]+)?\s*:[^;]*/iu','',$style);
+        if(is_string($without)) $style=$without;
+        $style=preg_replace('/\s*;\s*/u',';',$style)??$style;
+        $style=trim($style," ;\t\n\r\0\x0B");
+        return $style===''?'':' style='.$match[1].$style.$match[1];
+    },$html);
+    return is_string($clean)?$clean:$html;
+}
+
 function product_html(?string $value): string {
     $html = legacy($value ?? '');
     if ($html === '') return '';
-    if (str_contains($html, '&lt;') || str_contains($html, '&gt;')) {
-        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    for($i=0;$i<2 && (str_contains($html,'&lt;') || str_contains($html,'&gt;'));$i++) {
+        $decoded=html_entity_decode($html,ENT_QUOTES|ENT_HTML5,'UTF-8');
+        if($decoded===$html) break;
+        $html=$decoded;
     }
-    return $html;
+    return product_html_remove_backgrounds($html);
+}
+
+function product_html_has_content(string $html): bool {
+    if(trim($html)==='') return false;
+    if(preg_match('/<(?:img|video|audio|iframe|object|embed|svg|canvas)\b/i',$html)) return true;
+    $text=html_entity_decode(strip_tags($html),ENT_QUOTES|ENT_HTML5,'UTF-8');
+    $text=preg_replace('/[\s\x{00A0}\x{200B}\x{FEFF}]+/u','',$text)??$text;
+    return $text!=='';
 }
 
 $shortDescr = product_html($p['ShortDescr'] ?? '');
@@ -46,13 +72,13 @@ render_header(legacy($p['Name']));
 <section class="section"><div class="container">
 <a href="products.php">← Все продукты</a>
 <h1><?=htmlspecialchars(legacy($p['Name']))?></h1>
-<?php if($shortDescr!==''): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
+<?php if(product_html_has_content($shortDescr)): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
 
-<?php if($about!==''): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
+<?php if(product_html_has_content($about)): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
 
-<?php if($features!==''): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
+<?php if(product_html_has_content($features)): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
 
-<?php foreach($textSections as $section): $sectionContent=product_html($section['Content']??''); if($sectionContent==='')continue; ?>
+<?php foreach($textSections as $section): $sectionContent=product_html($section['Content']??''); if(!product_html_has_content($sectionContent))continue; ?>
 <div class="content-card product-html"><h2><?=htmlspecialchars(legacy((string)($section['Title']??'')))?></h2><?=$sectionContent?></div>
 <?php endforeach; ?>
 
