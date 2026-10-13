@@ -62,6 +62,18 @@ function product_html_has_content(string $html): bool {
     return $text!=='';
 }
 
+function product_html_trim_trailing_empty(string $html): string {
+    $html=rtrim($html);
+    $emptyInline='(?:\s|&nbsp;|&#160;|&#x0*a0;|<br\s*/?>)*';
+    $emptyBlock='<(p|div|span)\b[^>]*>'.$emptyInline.'<\/\1>';
+    do {
+        $before=$html;
+        $html=preg_replace('/'.$emptyInline.'(?:'.$emptyBlock.'|<br\s*\/?>)'.$emptyInline.'$/iu','',$html)??$html;
+        $html=rtrim($html);
+    } while($html!==$before);
+    return $html;
+}
+
 $shortDescr = product_html($p['ShortDescr'] ?? '');
 $about = product_html($p['About'] ?? '');
 $features = product_html($p['Features'] ?? '');
@@ -78,7 +90,7 @@ render_header(legacy($p['Name']));
 
 <?php if(product_html_has_content($features)): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
 
-<?php foreach($textSections as $section): $sectionContent=product_html($section['Content']??''); if(!product_html_has_content($sectionContent))continue; ?>
+<?php foreach($textSections as $section): $sectionContent=product_html_trim_trailing_empty(product_html($section['Content']??'')); if(!product_html_has_content($sectionContent))continue; ?>
 <div class="content-card product-html"><h2><?=htmlspecialchars(legacy((string)($section['Title']??'')))?></h2><?=$sectionContent?></div>
 <?php endforeach; ?>
 
