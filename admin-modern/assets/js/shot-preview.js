@@ -10,14 +10,14 @@
     document.body.appendChild(modal);
 
     var style=document.createElement('style');
-    style.textContent='.admin-shot-viewer{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:28px}.admin-shot-viewer[hidden]{display:none}.admin-shot-viewer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.78);cursor:pointer}.admin-shot-viewer-stage{position:relative;z-index:1;max-width:calc(100vw - 56px);max-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center}.admin-shot-viewer-image{display:block;max-width:100%;max-height:calc(100vh - 56px);width:auto;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);cursor:pointer}.admin-shot-viewer-open{overflow:hidden}';
+    style.textContent='.admin-shot-viewer{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:28px}.admin-shot-viewer[hidden]{display:none}.admin-shot-viewer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.78);cursor:pointer}.admin-shot-viewer-stage{position:relative;z-index:1;max-width:calc(100vw - 56px);max-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center}.admin-shot-viewer-image{display:block;max-width:100%;max-height:calc(100vh - 56px);width:auto;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 18px 60px rgba(0,0,0,.45);cursor:pointer}.admin-shot-viewer-open{overflow:hidden}.asset-shots-table tbody tr.js-shot-viewer-row{cursor:pointer}.asset-shots-table tbody tr.js-shot-viewer-row:hover{background:rgba(57,137,205,.07)}';
     document.head.appendChild(style);
 
     var image=modal.querySelector('.admin-shot-viewer-image');
     var lastTrigger=null;
 
-    function openViewer(link){
-        lastTrigger=link;
+    function openViewer(link,trigger){
+        lastTrigger=trigger||link;
         image.src=link.href;
         image.alt=(link.querySelector('img')||{}).alt||'';
         modal.hidden=false;
@@ -29,7 +29,7 @@
         modal.setAttribute('aria-hidden','true');
         image.removeAttribute('src');
         document.body.classList.remove('admin-shot-viewer-open');
-        if(lastTrigger) lastTrigger.focus();
+        if(lastTrigger&&typeof lastTrigger.focus==='function') lastTrigger.focus();
     }
 
     links.forEach(function(link){
@@ -37,7 +37,23 @@
         link.removeAttribute('rel');
         link.addEventListener('click',function(event){
             event.preventDefault();
-            openViewer(link);
+            event.stopPropagation();
+            openViewer(link,link);
+        });
+
+        var row=link.closest('tr');
+        if(!row) return;
+        row.classList.add('js-shot-viewer-row');
+        row.tabIndex=0;
+        row.addEventListener('click',function(event){
+            if(event.target.closest('input,button,select,textarea,label,a,form')) return;
+            openViewer(link,row);
+        });
+        row.addEventListener('keydown',function(event){
+            if((event.key==='Enter'||event.key===' ')&&!event.target.closest('input,button,select,textarea,label,a')){
+                event.preventDefault();
+                openViewer(link,row);
+            }
         });
     });
     modal.querySelectorAll('[data-shot-viewer-close]').forEach(function(el){
