@@ -2,6 +2,7 @@
 require __DIR__.'/app/bootstrap.php';
 require __DIR__.'/app/cart.php';
 require __DIR__.'/app/product_presenter.php';
+require __DIR__.'/app/product_text_sections.php';
 require __DIR__.'/includes/layout.php';
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (empty($_SESSION['_cart_csrf'])) $_SESSION['_cart_csrf'] = bin2hex(random_bytes(24));
@@ -38,6 +39,7 @@ function product_html(?string $value): string {
 $shortDescr = product_html($p['ShortDescr'] ?? '');
 $about = product_html($p['About'] ?? '');
 $features = product_html($p['Features'] ?? '');
+$textSections=product_text_sections_all($id,true);
 
 render_header(legacy($p['Name']));
 ?>
@@ -49,6 +51,10 @@ render_header(legacy($p['Name']));
 <?php if($about!==''): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
 
 <?php if($features!==''): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
+
+<?php foreach($textSections as $section): $sectionContent=product_html($section['Content']??''); if($sectionContent==='')continue; ?>
+<div class="content-card product-html"><h2><?=htmlspecialchars(legacy((string)($section['Title']??'')))?></h2><?=$sectionContent?></div>
+<?php endforeach; ?>
 
 <?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
 <?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; $shotName=legacy((string)($s['Name']??'')); ?>
