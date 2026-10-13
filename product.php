@@ -64,6 +64,61 @@ function product_html_has_content(string $html): bool {
 
 function product_html_trim_trailing_empty(string $html): string {
     $html=rtrim($html);
+    if($html==='') return '';
+
+    if(class_exists('DOMDocument')) {
+        $previous=libxml_use_internal_errors(true);
+        $doc=new DOMDocument('1.0','UTF-8');
+        $loaded=$doc->loadHTML('<?xml encoding="UTF-8"><div id="__product_html_root__">'.$html.'</div>',LIBXML_HTML_NOIMPLIED|LIBXML_HTML_NODEFDTD);
+        if($loaded){
+            $root=$doc->getElementById('__product_html_root__');
+            if($root){
+                $hasVisible=null;
+                $hasVisible=function($node) use (&$hasVisible): bool {
+                    if($node->nodeType===XML_TEXT_NODE){
+                        $text=html_entity_decode((string)$node->nodeValue,ENT_QUOTES|ENT_HTML5,'UTF-8');
+                        $text=preg_replace('/[\s\x{00A0}\x{200B}\x{FEFF}]+/u','',$text)??$text;
+                        return $text!=='';
+                    }
+                    if($node->nodeType===XML_ELEMENT_NODE){
+                        $tag=strtolower((string)$node->nodeName);
+                        if(in_array($tag,['img','video','audio','iframe','object','embed','svg','canvas'],true)) return true;
+                    }
+                    foreach($node->childNodes as $child){if($hasVisible($child)) return true;}
+                    return false;
+                };
+
+                $prune=null;
+                $prune=function($node) use (&$prune,$hasVisible): void {
+                    while($node->lastChild){
+                        $last=$node->lastChild;
+                        if($last->nodeType===XML_TEXT_NODE){
+                            if(!$hasVisible($last)){$node->removeChild($last);continue;}
+                            break;
+                        }
+                        if($last->nodeType===XML_COMMENT_NODE||$last->nodeType===XML_PI_NODE){$node->removeChild($last);continue;}
+                        if($last->nodeType===XML_ELEMENT_NODE){
+                            $tag=strtolower((string)$last->nodeName);
+                            if($tag==='br'){$node->removeChild($last);continue;}
+                            $prune($last);
+                            if(!$hasVisible($last)){$node->removeChild($last);continue;}
+                        }
+                        break;
+                    }
+                };
+
+                $prune($root);
+                $out='';
+                foreach($root->childNodes as $child)$out.=$doc->saveHTML($child);
+                libxml_clear_errors();
+                libxml_use_internal_errors($previous);
+                return rtrim($out);
+            }
+        }
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+    }
+
     $emptyInline='(?:\s|&nbsp;|&#160;|&#x0*a0;|<br\s*\/?>)*';
     $emptyBlock='<(p|div|span)\b[^>]*>'.$emptyInline.'<\/\1>';
     do {
