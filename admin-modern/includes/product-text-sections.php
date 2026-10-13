@@ -15,6 +15,7 @@ foreach($sections as $section){
     </div>
     <style>
         .product-text-sections-table{table-layout:auto}
+        .product-text-sections-table .text-section-preview-col{width:240px;min-width:240px}
         .product-text-sections-table .text-section-title{width:100%}
         .product-text-sections-table .text-section-active,.product-text-sections-table .text-section-sort,.product-text-sections-table .text-section-action{width:1%;white-space:nowrap}
         .product-text-sections-table .actions{flex-wrap:nowrap}
@@ -22,26 +23,35 @@ foreach($sections as $section){
         .product-text-sections-table tbody tr.text-section-row:hover{background:rgba(57,137,205,.07)}
         .product-text-sections-table .text-section-position{width:100%;min-width:76px;text-align:center}
         .product-text-sections-table .text-section-add{min-width:150px;width:100%}
+        .text-section-preview{position:relative;width:240px;height:180px;overflow:hidden;border:1px solid var(--admin-line);border-radius:8px;background:var(--admin-card);user-select:none;-webkit-user-select:none;cursor:pointer}
+        .text-section-preview iframe{display:block;width:480px;height:360px;border:0;transform:scale(.5);transform-origin:0 0;pointer-events:none;user-select:none;-webkit-user-select:none;background:transparent}
+        .text-section-preview-empty{display:flex;align-items:center;justify-content:center;color:var(--admin-muted);font-size:13px;text-align:center;padding:16px}
         .product-text-editor-modal .admin-modal-dialog{width:min(920px,calc(100vw - 40px));max-width:920px}
         .product-text-editor-modal .field{margin-top:14px}
         .text-section-hidden-form{display:none}
     </style>
     <div class="table-wrap">
         <table class="table product-text-sections-table">
-            <thead><tr><th class="text-section-title">Заголовок</th><th class="text-section-active">Активен</th><th class="text-section-sort">Сортировка</th><th class="text-section-action">Действия</th></tr></thead>
+            <thead><tr><th class="text-section-preview-col">Превью</th><th class="text-section-title">Заголовок</th><th class="text-section-active">Активен</th><th class="text-section-sort">Сортировка</th><th class="text-section-action">Действия</th></tr></thead>
             <tbody>
-            <?php foreach($sections as $i=>$section): $sid=(int)$section['ID']; $formId='textSectionRow'.$sid; ?>
-                <tr class="text-section-row js-text-section-open" data-section-id="<?=$sid?>" data-section-title="<?=aesc(a_legacy((string)$section['Title']))?>">
+            <?php foreach($sections as $i=>$section): $sid=(int)$section['ID']; $formId='textSectionRow'.$sid; $sectionTitle=a_legacy((string)$section['Title']; ?>
+                <tr class="text-section-row js-text-section-open" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>">
+                    <td class="text-section-preview-col">
+                        <div class="text-section-preview js-text-section-preview" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>" title="Открыть HTML-редактор">
+                            <iframe class="js-text-section-preview-frame" title="Превью: <?=aesc($sectionTitle)?>" tabindex="-1" sandbox=""></iframe>
+                        </div>
+                    </td>
                     <td class="text-section-title">
                         <form id="<?=$formId?>" class="text-section-hidden-form" method="post" action="product-text-section-action.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="product_id" value="<?=$productId?>"><input type="hidden" name="section_id" value="<?=$sid?>"></form>
-                        <input class="input" form="<?=$formId?>" name="title" value="<?=aesc(a_legacy((string)$section['Title']))?>">
+                        <input class="input" form="<?=$formId?>" name="title" value="<?=aesc($sectionTitle)?>">
                     </td>
                     <td class="text-section-active"><input form="<?=$formId?>" type="checkbox" name="active" <?=!empty($section['IsActive'])?'checked':''?>></td>
                     <td class="text-section-sort"><div class="actions"><button class="btn sort-btn" form="<?=$formId?>" name="action" value="sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" form="<?=$formId?>" name="action" value="sort_down" <?=$i===count($sections)-1?'disabled':''?> title="Ниже">↓</button></div></td>
-                    <td class="text-section-action"><div class="actions"><button class="btn" form="<?=$formId?>" name="action" value="save">Сохранить</button><button class="btn danger js-text-section-delete" type="button" data-section-id="<?=$sid?>" data-section-title="<?=aesc(a_legacy((string)$section['Title']))?>">Удалить</button></div></td>
+                    <td class="text-section-action"><div class="actions"><button class="btn" form="<?=$formId?>" name="action" value="save">Сохранить</button><button class="btn danger js-text-section-delete" type="button" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>">Удалить</button></div></td>
                 </tr>
             <?php endforeach; ?>
                 <tr>
+                    <td class="text-section-preview-col"><div class="text-section-preview text-section-preview-empty">Превью появится после добавления</div></td>
                     <td class="text-section-title">
                         <form id="textSectionAdd" class="text-section-hidden-form" method="post" action="product-text-section-action.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="product_id" value="<?=$productId?>"></form>
                         <input class="input" form="textSectionAdd" name="title" placeholder="Заголовок раздела">
@@ -108,6 +118,19 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
         }
         return value;
     }
+    function escapeHtml(value){
+        return String(value||'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});
+    }
+    function previewDocument(title,content){
+        content=decodeHtml(content);
+        return '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:transparent!important;color:#17283c;font-family:Arial,sans-serif}body{padding:18px;font-size:14px;line-height:1.45}h1,h2,h3{margin:0 0 12px;line-height:1.25}h2{font-size:23px}p{margin:0 0 10px}img{max-width:100%;height:auto}table{max-width:100%;border-collapse:collapse}*{box-sizing:border-box;background-color:transparent!important;background-image:none!important}</style></head><body><h2>'+escapeHtml(title)+'</h2>'+content+'</body></html>';
+    }
+    document.querySelectorAll('.js-text-section-preview').forEach(function(preview){
+        var id=preview.dataset.sectionId||'';
+        var title=preview.dataset.sectionTitle||'';
+        var frame=preview.querySelector('.js-text-section-preview-frame');
+        if(frame)frame.srcdoc=previewDocument(title,(window.ciritasProductTextContents||{})[id]||'');
+    });
     function setEditorContent(value){
         value=decodeHtml(value);
         editorText.value=value;
