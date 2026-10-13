@@ -34,7 +34,7 @@ foreach($sections as $section){
         <table class="table product-text-sections-table">
             <thead><tr><th class="text-section-preview-col">Превью</th><th class="text-section-title">Заголовок</th><th class="text-section-active">Активен</th><th class="text-section-sort">Сортировка</th><th class="text-section-action">Действия</th></tr></thead>
             <tbody>
-            <?php foreach($sections as $i=>$section): $sid=(int)$section['ID']; $formId='textSectionRow'.$sid; $sectionTitle=a_legacy((string)$section['Title']; ?>
+            <?php foreach($sections as $i=>$section): $sid=(int)$section['ID']; $formId='textSectionRow'.$sid; $sectionTitle=a_legacy((string)$section['Title']); ?>
                 <tr class="text-section-row js-text-section-open" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>">
                     <td class="text-section-preview-col">
                         <div class="text-section-preview js-text-section-preview" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>" title="Открыть HTML-редактор">
