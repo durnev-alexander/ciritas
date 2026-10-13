@@ -99,12 +99,39 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
     var editorTitle=document.getElementById('productTextEditorTitle');
     var editorText=document.getElementById('productTextEditorContent');
     var lastTrigger=null;
+    function decodeHtml(value){
+        value=value||'';
+        for(var i=0;i<2&&/&lt;\/?[a-z][\s\S]*?&gt;/i.test(value);i++){
+            var box=document.createElement('textarea');
+            box.innerHTML=value;
+            value=box.value;
+        }
+        return value;
+    }
     function setEditorContent(value){
-        editorText.value=value||'';
-        if(window.tinymce){var ed=tinymce.get('productTextEditorContent');if(ed)ed.setContent(value||'',{format:'html'});}
+        value=decodeHtml(value);
+        editorText.value=value;
+        if(window.tinymce){var ed=tinymce.get('productTextEditorContent');if(ed)ed.setContent(value,{format:'html'});}
+    }
+    function focusEditor(attempt){
+        attempt=attempt||0;
+        if(window.tinymce){
+            var ed=tinymce.get('productTextEditorContent');
+            if(ed){ed.focus();return;}
+        }
+        if(attempt<20){setTimeout(function(){focusEditor(attempt+1);},50);return;}
+        editorText.focus();
     }
     function openEditor(row){
-        var id=row.dataset.sectionId||'';lastTrigger=row;editorId.value=id;editorTitle.textContent='Редактирование текста: '+(row.dataset.sectionTitle||'');setEditorContent((window.ciritasProductTextContents||{})[id]||'');editorModal.hidden=false;editorModal.setAttribute('aria-hidden','false');document.body.classList.add('admin-modal-open');
+        var id=row.dataset.sectionId||'';
+        lastTrigger=row;
+        editorId.value=id;
+        editorTitle.textContent='Редактирование текста: '+(row.dataset.sectionTitle||'');
+        editorModal.hidden=false;
+        editorModal.setAttribute('aria-hidden','false');
+        document.body.classList.add('admin-modal-open');
+        setEditorContent((window.ciritasProductTextContents||{})[id]||'');
+        requestAnimationFrame(function(){focusEditor(0);});
     }
     function closeEditor(){editorModal.hidden=true;editorModal.setAttribute('aria-hidden','true');document.body.classList.remove('admin-modal-open');if(lastTrigger)lastTrigger.focus();}
     document.querySelectorAll('.js-text-section-open').forEach(function(row){row.tabIndex=0;row.addEventListener('click',function(e){if(e.target.closest('input,button,a,label,form'))return;openEditor(row);});row.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.target.closest('input,button,a'))openEditor(row);});});
