@@ -32,7 +32,7 @@ if($client==='')$client=trim((string)($r['LastName']??'').' '.(string)($r['First
 $client=order_plain_text($client);
 $contact=order_plain_text(trim((string)($r['Phone']??'').' '.(string)($r['Email']??'')));
 ?>
-<tr><td class="order-number"><b>№ <?=aesc((string)($r['OrderNumber']??$r['ID']))?></b><div class="help">ID <?=aesc((string)$r['ID'])?></div></td><td class="order-date"><?=$date>0?aesc(date('d.m.Y H:i',$date)):''?></td><td class="order-client"><?=aesc($client)?></td><td class="order-sum"><?=number_format((float)($r['TotalSum']??0),2,',',' ')?> ₽</td><td class="order-contact"><?=aesc($contact)?></td><td class="order-actions"><a class="btn" href="order-view.php?id=<?=(int)$r['ID']?>">Открыть</a></td></tr>
+<tr><td class="order-number"><b>№ <?=aesc((string)($r['OrderNumber']??$r['ID']))?></b></td><td class="order-date"><?=$date>0?aesc(date('d.m.Y H:i',$date)):''?></td><td class="order-client"><?=aesc($client)?></td><td class="order-sum"><?=number_format((float)($r['TotalSum']??0),2,',',' ')?> ₽</td><td class="order-contact"><?=aesc($contact)?></td><td class="order-actions"><a class="btn" href="order-view.php?id=<?=(int)$r['ID']?>">Открыть</a></td></tr>
 <?php endforeach; ?>
 </tbody></table></div></div>
 <?php admin_footer();
