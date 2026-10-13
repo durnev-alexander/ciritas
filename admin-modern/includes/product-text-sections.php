@@ -146,3 +146,4 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
 })();
 </script>
 <script src="assets/js/html-editor.js"></script>
+<script src="assets/js/shot-preview.js"></script>
