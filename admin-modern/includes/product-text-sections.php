@@ -24,6 +24,7 @@ foreach($sections as $section){
         .product-text-sections-table .text-section-add{min-width:150px;width:100%}
         .product-text-editor-modal .admin-modal-dialog{width:min(920px,calc(100vw - 40px));max-width:920px}
         .product-text-editor-modal .field{margin-top:14px}
+        .text-section-hidden-form{display:none}
     </style>
     <div class="table-wrap">
         <table class="table product-text-sections-table">
@@ -31,20 +32,24 @@ foreach($sections as $section){
             <tbody>
             <?php foreach($sections as $i=>$section): $sid=(int)$section['ID']; $formId='textSectionRow'.$sid; ?>
                 <tr class="text-section-row js-text-section-open" data-section-id="<?=$sid?>" data-section-title="<?=aesc(a_legacy((string)$section['Title']))?>">
-                    <td class="text-section-title"><input class="input" form="<?=$formId?>" name="title" value="<?=aesc(a_legacy((string)$section['Title']))?>"></td>
+                    <td class="text-section-title">
+                        <form id="<?=$formId?>" class="text-section-hidden-form" method="post" action="product-text-section-action.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="product_id" value="<?=$productId?>"><input type="hidden" name="section_id" value="<?=$sid?>"></form>
+                        <input class="input" form="<?=$formId?>" name="title" value="<?=aesc(a_legacy((string)$section['Title']))?>">
+                    </td>
                     <td class="text-section-active"><input form="<?=$formId?>" type="checkbox" name="active" <?=!empty($section['IsActive'])?'checked':''?>></td>
                     <td class="text-section-sort"><div class="actions"><button class="btn sort-btn" form="<?=$formId?>" name="action" value="sort_up" <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" form="<?=$formId?>" name="action" value="sort_down" <?=$i===count($sections)-1?'disabled':''?> title="Ниже">↓</button></div></td>
                     <td class="text-section-action"><div class="actions"><button class="btn" form="<?=$formId?>" name="action" value="save">Сохранить</button><button class="btn danger js-text-section-delete" type="button" data-section-id="<?=$sid?>" data-section-title="<?=aesc(a_legacy((string)$section['Title']))?>">Удалить</button></div></td>
                 </tr>
-                <form id="<?=$formId?>" method="post" action="product-text-section-action.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="product_id" value="<?=$productId?>"><input type="hidden" name="section_id" value="<?=$sid?>"></form>
             <?php endforeach; ?>
                 <tr>
-                    <td class="text-section-title"><input class="input" form="textSectionAdd" name="title" placeholder="Заголовок раздела"></td>
+                    <td class="text-section-title">
+                        <form id="textSectionAdd" class="text-section-hidden-form" method="post" action="product-text-section-action.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="product_id" value="<?=$productId?>"></form>
+                        <input class="input" form="textSectionAdd" name="title" placeholder="Заголовок раздела">
+                    </td>
                     <td class="text-section-active"><input form="textSectionAdd" type="checkbox" name="active" checked></td>
                     <td class="text-section-sort"><input class="input text-section-position" form="textSectionAdd" type="number" name="position" min="1" max="<?=count($sections)+1?>" value="<?=count($sections)+1?>" title="Место в списке"></td>
                     <td class="text-section-action"><button class="btn primary text-section-add" form="textSectionAdd" name="action" value="add">Добавить</button></td>
                 </tr>
-                <form id="textSectionAdd" method="post" action="product-text-section-action.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="product_id" value="<?=$productId?>"></form>
             </tbody>
         </table>
     </div>
