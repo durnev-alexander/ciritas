@@ -32,8 +32,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $date=trim((string)($_POST['news_date']??''));
     $short=(string)($_POST['short_descr']??'');
     $full=(string)($_POST['full_descr']??'');
-    $photoFull=trim((string)($_POST['photo_full']??''));
-    $photoThumb=trim((string)($_POST['photo_thumb']??''));
+    $photoFull=(string)($row['PhotoFull']??'');
+    $photoThumb=(string)($row['PhotoThumb']??'');
     $publish=isset($_POST['is_publish'])?1:0;
     if($title===''){$error='Укажите заголовок новости.';}
     elseif(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date) || strtotime($date)===false){$error='Выберите дату из календаря.';}
@@ -62,17 +62,23 @@ admin_header($id?'Редактирование новости':'Новая но�
 <form method="post">
 <input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="id" value="<?=$id?>">
 <div class="form-grid">
-<div class="field"><label>Дата</label><input class="input" id="newsDate" type="date" name="news_date" required value="<?=aesc(news_edit_date_value($row['NewsDate']??''))?>" onkeydown="event.preventDefault()" onpaste="event.preventDefault()" ondrop="event.preventDefault()"></div>
-<div class="field"><label><input type="checkbox" name="is_publish" <?=!empty($row['IsPublish'])?'checked':''?>> Опубликована</label></div>
+<div class="field full news-date-publish-row">
+    <div class="news-date-field"><label for="newsDate">Дата</label><input class="input" id="newsDate" type="date" name="news_date" required value="<?=aesc(news_edit_date_value($row['NewsDate']??''))?>" onkeydown="event.preventDefault()" onpaste="event.preventDefault()" ondrop="event.preventDefault()"></div>
+    <label class="news-publish-field"><input type="checkbox" name="is_publish" <?=!empty($row['IsPublish'])?'checked':''?>> Опубликовать</label>
+</div>
 <div class="field full"><label>Заголовок</label><input class="input" name="title" required value="<?=aesc(a_legacy((string)($row['Title']??'')))?>"></div>
 <div class="field full"><label>Краткий текст (HTML)</label><textarea class="textarea html-editor" rows="8" name="short_descr"><?=aesc(a_legacy((string)($row['ShortDescr']??'')))?></textarea></div>
 <div class="field full"><label>Полный текст (HTML)</label><textarea class="textarea html-editor" rows="14" name="full_descr"><?=aesc(a_legacy((string)($row['FullDescr']??'')))?></textarea></div>
-<div class="field"><label>Фото — полный файл</label><input class="input" name="photo_full" value="<?=aesc(a_legacy((string)($row['PhotoFull']??'')))?>"></div>
-<div class="field"><label>Фото — миниатюра</label><input class="input" name="photo_thumb" value="<?=aesc(a_legacy((string)($row['PhotoThumb']??'')))?>"></div>
 </div>
 <p class="muted">Поля описания сохраняются как HTML и на публичной странице отображаются с сохранёнными тегами.</p>
 <div class="actions"><button class="btn primary" type="submit">Сохранить</button><a class="btn" href="news.php">Отмена</a></div>
 </form>
 </div>
+<style>
+.news-date-publish-row{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.news-date-field{display:flex;flex-direction:column;gap:6px}
+.news-date-field .input{width:180px}
+.news-publish-field{display:flex;align-items:center;gap:8px;min-height:38px;margin-bottom:1px;white-space:nowrap}
+</style>
 <script src="assets/js/html-editor.js"></script>
 <?php admin_footer();
