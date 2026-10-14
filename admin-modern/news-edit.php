@@ -15,6 +15,16 @@ function db_text_admin(string $value): string {
     if($value===''||str_contains($charset,'utf8')) return $value;
     return mb_convert_encoding($value,'Windows-1251','UTF-8');
 }
+function news_edit_date_value(mixed $value): string {
+    $raw=trim(a_legacy((string)$value));
+    if($raw==='') return date('Y-m-d');
+    if(ctype_digit($raw)){
+        $timestamp=(int)$raw;
+        if($timestamp>0) return date('Y-m-d',$timestamp);
+    }
+    $timestamp=strtotime($raw);
+    return $timestamp!==false?date('Y-m-d',$timestamp):date('Y-m-d');
+}
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_check();
@@ -26,6 +36,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $photoThumb=trim((string)($_POST['photo_thumb']??''));
     $publish=isset($_POST['is_publish'])?1:0;
     if($title===''){$error='Укажите заголовок новости.';}
+    elseif(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date) || strtotime($date)===false){$error='Выберите дату из календаря.';}
     else{
         try{
             $isNew=$id<1;
@@ -51,7 +62,7 @@ admin_header($id?'Редактирование новости':'Новая но�
 <form method="post">
 <input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="id" value="<?=$id?>">
 <div class="form-grid">
-<div class="field"><label>Дата</label><input class="input" type="text" name="news_date" value="<?=aesc(a_legacy((string)($row['NewsDate']??'')))?>"></div>
+<div class="field"><label>Дата</label><input class="input" id="newsDate" type="date" name="news_date" required value="<?=aesc(news_edit_date_value($row['NewsDate']??''))?>" onkeydown="event.preventDefault()" onpaste="event.preventDefault()" ondrop="event.preventDefault()"></div>
 <div class="field"><label><input type="checkbox" name="is_publish" <?=!empty($row['IsPublish'])?'checked':''?>> Опубликована</label></div>
 <div class="field full"><label>Заголовок</label><input class="input" name="title" required value="<?=aesc(a_legacy((string)($row['Title']??'')))?>"></div>
 <div class="field full"><label>Краткий текст (HTML)</label><textarea class="textarea html-editor" rows="8" name="short_descr"><?=aesc(a_legacy((string)($row['ShortDescr']??'')))?></textarea></div>
