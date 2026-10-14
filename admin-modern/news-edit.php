@@ -25,6 +25,13 @@ function news_edit_date_value(mixed $value): string {
     $timestamp=strtotime($raw);
     return $timestamp!==false?date('Y-m-d',$timestamp):date('Y-m-d');
 }
+function news_edit_date_timestamp(string $date): int {
+    $parts=explode('-',$date);
+    if(count($parts)!==3) return 0;
+    $year=(int)$parts[0];$month=(int)$parts[1];$day=(int)$parts[2];
+    if(!checkdate($month,$day,$year)) return 0;
+    return mktime(5,0,0,$month,$day,$year);
+}
 function news_text_has_content(string $html): bool {
     $text=html_entity_decode($html,ENT_QUOTES|ENT_HTML5,'UTF-8');
     $text=strip_tags($text);
@@ -36,18 +43,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     csrf_check();
     $title=trim((string)($_POST['title']??''));
     $date=trim((string)($_POST['news_date']??''));
+    $dateTimestamp=news_edit_date_timestamp($date);
     $short=(string)($_POST['short_descr']??'');
     $full=(string)($_POST['full_descr']??'');
     $photoFull=(string)($row['PhotoFull']??'');
     $photoThumb=(string)($row['PhotoThumb']??'');
     $publish=isset($_POST['is_publish'])?1:0;
-    if($date==='' || !preg_match('/^\d{4}-\d{2}-\d{2}$/',$date) || strtotime($date)===false){$error='Укажите дату новости.';}
+    if($date==='' || $dateTimestamp<=0){$error='Укажите дату новости.';}
     elseif($title===''){$error='Укажите заголовок новости.';}
     elseif($publish && (!news_text_has_content($short) || !news_text_has_content($full))){$error='Опубликовать новость можно только после заполнения краткого и полного текста.';}
     else{
         try{
             $isNew=$id<1;
-            $values=[db_text_admin($date),db_text_admin($title),db_text_admin($short),db_text_admin($full),db_text_admin($photoFull),db_text_admin($photoThumb),$publish];
+            $values=[$dateTimestamp,db_text_admin($title),db_text_admin($short),db_text_admin($full),db_text_admin($photoFull),db_text_admin($photoThumb),$publish];
             if($id>0){
                 $values[]=$id;
                 db()->prepare('UPDATE csNews SET NewsDate=?,Title=?,ShortDescr=?,FullDescr=?,PhotoFull=?,PhotoThumb=?,IsPublish=? WHERE ID=?')->execute($values);
