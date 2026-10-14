@@ -53,7 +53,7 @@ if($error) admin_notice($error,'error');
 <div class="toolbar">
     <div><h2>Новости на главной</h2><div class="help">Количество последних опубликованных новостей, выводимых под списком программ. Значение 0 отключает блок.</div></div>
 </div>
-<div class="toolbar" style="justify-content:flex-start"><input class="input" style="width:130px" type="number" name="home_news_count" min="0" max="50" value="<?=$homeNewsCount?>"><button class="btn primary">Сохранить</button></div>
+<div class="toolbar" style="justify-content:flex-start;margin-bottom:0"><input class="input" style="width:130px" type="number" name="home_news_count" min="0" max="50" value="<?=$homeNewsCount?>"><button class="btn primary">Сохранить</button></div>
 </form></div>
 
 <div class="card">
