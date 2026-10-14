@@ -7,4 +7,7 @@
 .asset-files-table .asset-active input[type="checkbox"]:focus-visible,.asset-shots-table .asset-shot-active input[type="checkbox"]:focus-visible,.product-text-sections-table .text-section-active input[type="checkbox"]:focus-visible{outline:2px solid rgba(22,143,255,.15);outline-offset:2px;border-color:#168fff}
 .asset-files-table .asset-active input[type="checkbox"]::before,.asset-shots-table .asset-shot-active input[type="checkbox"]::before,.product-text-sections-table .text-section-active input[type="checkbox"]::before{content:"✓";font-size:20px;line-height:1;font-weight:700;transform:scale(0);transition:transform .12s ease}
 .asset-files-table .asset-active input[type="checkbox"]:checked::before,.asset-shots-table .asset-shot-active input[type="checkbox"]:checked::before,.product-text-sections-table .text-section-active input[type="checkbox"]:checked::before{transform:scale(1)}
+.product-text-sections-table .sort-btn,.faq-topics-table .sort-btn,.faq-items-table .sort-btn{display:inline-flex!important;visibility:visible!important}
+.product-text-sections-table input[type="number"],.faq-topics-table input[type="number"]{-webkit-appearance:auto;appearance:auto}
+.product-text-sections-table input[type="number"]::-webkit-inner-spin-button,.product-text-sections-table input[type="number"]::-webkit-outer-spin-button,.faq-topics-table input[type="number"]::-webkit-inner-spin-button,.faq-topics-table input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:auto;appearance:auto;opacity:1;display:block}
 html{scrollbar-gutter:stable}
