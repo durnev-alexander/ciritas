@@ -24,7 +24,26 @@
         window.addEventListener('load',restoreScroll,{once:true});
     }
 
-    document.addEventListener('submit',function(){
+    function submittedAction(event,form){
+        var submitter=event.submitter;
+        if(submitter&&submitter.name==='action') return submitter.value||'';
+        var actionInput=form.querySelector('[name="action"]');
+        return actionInput?actionInput.value||'':'';
+    }
+    function changesRowCount(action,form){
+        if(action==='file_delete'||action==='price_delete'||action==='shot_delete'||action==='delete') return true;
+        if(action==='shot_add'||action==='add') return true;
+        if(action==='file_save'||action==='price_save'){
+            var asset=form.querySelector('[name="asset_id"]');
+            return !asset||!String(asset.value||'').trim();
+        }
+        return false;
+    }
+    document.addEventListener('submit',function(event){
+        var form=event.target;
+        if(!(form instanceof HTMLFormElement)) return;
+        var action=submittedAction(event,form);
+        if(!changesRowCount(action,form)) return;
         try{
             sessionStorage.setItem(positionKey,String(Math.max(0,window.scrollY||window.pageYOffset||0)));
             sessionStorage.setItem(pendingKey,'1');
