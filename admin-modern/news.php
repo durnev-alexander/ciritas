@@ -25,7 +25,13 @@ admin_header('Новости');
 </form></div>
 
 <div class="card">
-<div class="section-title"><div><h2 style="margin:0">Новости</h2><p class="muted">Создание и редактирование новостей сайта.</p></div><a class="btn primary" href="news-edit.php">+ Добавить новость</a></div>
+<div class="toolbar">
+    <div><h2>Новости</h2><div class="help">Создание и редактирование новостей сайта.</div></div>
+    <div class="admin-products-summary">Всего: <?=count($rows)?></div>
+</div>
+<div class="toolbar" style="justify-content:flex-end">
+    <a class="btn primary" href="news-edit.php">+ Добавить новость</a>
+</div>
 <?php if(isset($_GET['saved'])): ?><div class="alert success">Новость сохранена.</div><?php endif; ?>
 <?php if($error): ?><div class="alert error"><?=aesc($error)?></div><?php endif; ?>
 <div class="table-wrap"><table class="table"><thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th></th></tr></thead><tbody>
