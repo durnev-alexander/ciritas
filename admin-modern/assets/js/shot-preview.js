@@ -1,4 +1,38 @@
 (function(){
+    var params=new URLSearchParams(window.location.search);
+    var productId=params.get('id')||'0';
+    var prefix='ciritas_resource_scroll_'+productId;
+    var positionKey=prefix+'_y';
+    var pendingKey=prefix+'_pending';
+    var restoreY=null;
+
+    try{
+        if(sessionStorage.getItem(pendingKey)==='1'){
+            var saved=parseInt(sessionStorage.getItem(positionKey)||'0',10);
+            if(Number.isFinite(saved)&&saved>=0) restoreY=saved;
+            sessionStorage.removeItem(pendingKey);
+            sessionStorage.removeItem(positionKey);
+        }
+    }catch(e){}
+
+    function restoreScroll(){
+        if(restoreY===null) return;
+        window.scrollTo(0,restoreY);
+    }
+    if(restoreY!==null){
+        requestAnimationFrame(function(){requestAnimationFrame(restoreScroll);});
+        window.addEventListener('load',restoreScroll,{once:true});
+    }
+
+    document.addEventListener('submit',function(){
+        try{
+            sessionStorage.setItem(positionKey,String(Math.max(0,window.scrollY||window.pageYOffset||0)));
+            sessionStorage.setItem(pendingKey,'1');
+        }catch(e){}
+    },true);
+})();
+
+(function(){
     var frames=[].slice.call(document.querySelectorAll('.js-text-section-preview-frame'));
     if(!frames.length) return;
 
