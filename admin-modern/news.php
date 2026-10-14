@@ -50,8 +50,10 @@ if($error) admin_notice($error,'error');
 ?>
 <div class="card" style="margin-bottom:18px">
 <form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="action" value="save_home_news_count">
-<div class="section-title"><div><h2 style="margin:0">Новости на главной</h2><p class="muted">Количество последних опубликованных новостей, выводимых под списком программ. Значение 0 отключает блок.</p></div></div>
-<div class="actions" style="justify-content:flex-start;margin-top:14px"><input class="input" style="width:130px" type="number" name="home_news_count" min="0" max="50" value="<?=$homeNewsCount?>"><button class="btn primary">Сохранить</button></div>
+<div class="toolbar">
+    <div><h2>Новости на главной</h2><div class="help">Количество последних опубликованных новостей, выводимых под списком программ. Значение 0 отключает блок.</div></div>
+</div>
+<div class="toolbar" style="justify-content:flex-start"><input class="input" style="width:130px" type="number" name="home_news_count" min="0" max="50" value="<?=$homeNewsCount?>"><button class="btn primary">Сохранить</button></div>
 </form></div>
 
 <div class="card">
