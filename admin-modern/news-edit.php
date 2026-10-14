@@ -28,6 +28,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($title===''){$error='Укажите заголовок новости.';}
     else{
         try{
+            $isNew=$id<1;
             $values=[db_text_admin($date),db_text_admin($title),db_text_admin($short),db_text_admin($full),db_text_admin($photoFull),db_text_admin($photoThumb),$publish];
             if($id>0){
                 $values[]=$id;
@@ -36,7 +37,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 db()->prepare('INSERT INTO csNews (NewsDate,Title,ShortDescr,FullDescr,PhotoFull,PhotoThumb,IsPublish) VALUES (?,?,?,?,?,?,?)')->execute($values);
                 $id=(int)db()->lastInsertId();
             }
-            redirect('news.php?saved=1');
+            admin_set_notice($isNew?'Новость добавлена.':'Новость изменена.','success');
+            redirect('news.php');
         }catch(Throwable $e){$error='Не удалось сохранить новость.';}
     }
     $row=['NewsDate'=>$date,'Title'=>$title,'ShortDescr'=>$short,'FullDescr'=>$full,'PhotoFull'=>$photoFull,'PhotoThumb'=>$photoThumb,'IsPublish'=>$publish];
