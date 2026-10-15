@@ -34,7 +34,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             if($action==='add') cart_add_price((int)($_POST['price_id']??0),(int)($_POST['amount']??1));
             elseif($action==='update') cart_update_item((int)($_POST['item_id']??0),(int)($_POST['amount']??1));
             elseif($action==='remove') cart_remove_item((int)($_POST['item_id']??0));
-            $_SESSION['_cart_csrf']=bin2hex(random_bytes(24));
+            if(!$isAjax)$_SESSION['_cart_csrf']=bin2hex(random_bytes(24));
             if($isAjax){header('Content-Type: application/json; charset=utf-8');echo json_encode(cart_ajax_payload(),JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);exit;}
             header('Location: cart.php');exit;
         }catch(Throwable $e){$error='Не удалось изменить корзину.';}
