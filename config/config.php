@@ -18,8 +18,17 @@ return [
     ],
     'mail' => [
         'enabled' => false,
+        'transport' => 'smtp',
+        'host' => '',
+        'port' => 587,
+        'encryption' => 'tls',
+        'username' => '',
+        'password' => '',
+        'timeout' => 15,
         'from' => '',
+        'from_name' => 'ЦИРИТАС',
         'order_to' => '',
+        'support_to' => 'support@ciritas.ru',
     ],
     'admin' => [
         'username' => getenv('CIRITAS_ADMIN_USER') ?: '',
