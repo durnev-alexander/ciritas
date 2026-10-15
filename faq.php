@@ -58,7 +58,7 @@ render_header('ЧАВО');
 </div>
 </div></section>
 <style>
-.faq-public-card h2{margin-top:0}.faq-public-table{width:100%;border-collapse:collapse}.faq-public-table th,.faq-public-table td{padding:14px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.faq-public-table th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.04em;background:var(--soft)}.faq-public-table tbody tr:last-child td{border-bottom:0}.faq-topic-row{cursor:pointer;transition:.16s ease}.faq-topic-row:hover{background:var(--soft)}.faq-topic-row.active{background:var(--soft-2);box-shadow:inset 4px 0 0 var(--navy)}.faq-topics-public th:last-child,.faq-topics-public td:last-child{width:1%;white-space:nowrap;text-align:center}.faq-question-toggle{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer}.faq-question-toggle:hover{color:var(--navy)}.faq-answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);line-height:1.7}.faq-answer>:first-child{margin-top:0}.faq-answer>:last-child{margin-bottom:0}
+.faq-public-card h2{margin-top:0}.faq-public-table{width:100%;border-collapse:collapse}.faq-public-table th,.faq-public-table td{padding:14px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.faq-public-table th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.04em;background:var(--soft)}.faq-public-table tbody tr:last-child td{border-bottom:0}.faq-topic-row{cursor:pointer;transition:.16s ease}.faq-topic-row td:first-child{font-weight:600}.faq-topic-row:hover{background:var(--soft)}.faq-topic-row.active{background:var(--soft-2);box-shadow:inset 4px 0 0 var(--navy)}.faq-topics-public th:last-child,.faq-topics-public td:last-child{width:1%;white-space:nowrap;text-align:center}.faq-question-row{transition:.16s ease}.faq-question-row.open{box-shadow:inset 4px 0 0 var(--navy)}.faq-question-toggle{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer}.faq-question-toggle:hover{color:var(--navy)}.faq-answer{margin-top:14px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--soft);line-height:1.7}.faq-answer>:first-child{margin-top:0}.faq-answer>:last-child{margin-bottom:0}
 </style>
 <script>
 (function(){
@@ -73,7 +73,7 @@ render_header('ЧАВО');
             row.hidden=!show;
             var toggle=row.querySelector('.faq-question-toggle');
             var answer=row.querySelector('.faq-answer');
-            if(show){visible++;}else if(toggle&&answer){answer.hidden=true;toggle.setAttribute('aria-expanded','false');}
+            if(show){visible++;}else if(toggle&&answer){answer.hidden=true;toggle.setAttribute('aria-expanded','false');row.classList.remove('open');}
         });
         if(empty)empty.hidden=visible>0;
     }
@@ -87,9 +87,11 @@ render_header('ЧАВО');
             var id=button.getAttribute('aria-controls');
             var answer=id?document.getElementById(id):null;
             if(!answer)return;
+            var row=button.closest('.faq-question-row');
             var open=button.getAttribute('aria-expanded')==='true';
             button.setAttribute('aria-expanded',open?'false':'true');
             answer.hidden=open;
+            if(row)row.classList.toggle('open',!open);
         });
     });
     if(topicRows.length)selectTopic(topicRows[0].dataset.topicId||'');
