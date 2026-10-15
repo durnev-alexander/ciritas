@@ -85,12 +85,12 @@ try{
     $r=$q->fetch();
     $html=$r?public_page_html($r['Content']??''):'';
     if($html!==''){
-        echo '<div class="content-card support-info-card"><h2>Обращение из программы</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><div class="public-page-html">'.$html.'</div></div>';
+        echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><div class="public-page-html">'.$html.'</div></div>';
     }else{
-        echo '<div class="content-card support-info-card"><h2>Обращение из программы</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><p>Свяжитесь с нами для получения технической поддержки.</p></div>';
+        echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><p>Свяжитесь с нами для получения технической поддержки.</p></div>';
     }
 }catch(Throwable){
-    echo '<div class="content-card support-info-card"><h2>Обращение из программы</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><p>Свяжитесь с нами для получения технической поддержки.</p></div>';
+    echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><p>Свяжитесь с нами для получения технической поддержки.</p></div>';
 }
 ?>
 
