@@ -22,12 +22,22 @@ function public_news_date(mixed $value): string {
     return $timestamp!==false?date('d.m.Y',$timestamp):$raw;
 }
 
+$q=trim((string)($_GET['q']??''));
 render_header('Новости');
 ?>
-<section class="section"><div class="container"><h1>Новости</h1>
+<section class="section"><div class="container">
+<div class="section-head">
+    <div><h1>Новости</h1><p class="muted">Новости компании за весь период</p></div>
+    <form method="get"><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" placeholder="Поиск по заголовку новости"></form>
+</div>
 <?php
 try {
-    $rows = db()->query('SELECT * FROM csNews WHERE IsPublish=1 ORDER BY NewsDate DESC, ID DESC')->fetchAll();
+    $sql='SELECT * FROM csNews WHERE IsPublish=1';
+    $params=[];
+    if($q!==''){$sql.=' AND Title LIKE ?';$params[]='%'.$q.'%';}
+    $sql.=' ORDER BY NewsDate DESC, ID DESC';
+    $st=db()->prepare($sql);$st->execute($params);$rows=$st->fetchAll();
+    if(!$rows){echo '<div class="content-card"><p class="muted">По вашему запросу новости не найдены.</p></div>';}
     foreach ($rows as $r):
         $title = legacy((string)($r['Title'] ?? ''));
         $short = news_html($r['ShortDescr'] ?? '');
