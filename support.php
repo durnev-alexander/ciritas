@@ -17,7 +17,43 @@ function public_page_html(?string $value): string {
     return $html;
 }
 
+function support_page_html(string $pageName): string {
+    try{
+        $q=db()->prepare('SELECT Content FROM csPages WHERE PageName=? ORDER BY ID LIMIT 1');
+        $q->execute([$pageName]);
+        $row=$q->fetch();
+        return $row?public_page_html($row['Content']??''):'';
+    }catch(Throwable){
+        return '';
+    }
+}
+
+function support_next_letter_num(): int {
+    $pdo=db();
+    $pdo->beginTransaction();
+    try{
+        $q=$pdo->prepare('SELECT ID,Value FROM csSettings WHERE Name=? ORDER BY ID LIMIT 1 FOR UPDATE');
+        $q->execute(['LastLetterNum']);
+        $row=$q->fetch();
+        if($row){
+            $next=max(0,(int)$row['Value'])+1;
+            $u=$pdo->prepare('UPDATE csSettings SET Value=? WHERE ID=?');
+            $u->execute([$next,(int)$row['ID']]);
+        }else{
+            $next=1;
+            $i=$pdo->prepare('INSERT INTO csSettings (Name,Value) VALUES (?,?)');
+            $i->execute(['LastLetterNum',$next]);
+        }
+        $pdo->commit();
+        return $next;
+    }catch(Throwable $e){
+        if($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+}
+
 $sentTicket=0;
+$sentMessageHtml='';
 $formError='';
 $form=[
     'name'=>trim((string)($_POST['name']??'')),
@@ -37,7 +73,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($form['message']==='') throw new RuntimeException('Введите текст обращения.');
         if(strlen($form['message'])>10000) throw new RuntimeException('Текст обращения слишком большой.');
 
-        $ticket=random_int(10000,99999);
+        $ticket=support_next_letter_num();
         $to=trim((string)cfg('mail.support_to','support@ciritas.ru')) ?: 'support@ciritas.ru';
         $sentAt=date('d.m.Y H:i:s');
         $ip=trim((string)($_SERVER['REMOTE_ADDR']??''));
@@ -67,6 +103,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         mailer_send($form['email'],$copySubject,$copyBody,$to);
 
         $sentTicket=$ticket;
+        $template=support_page_html('SupportMessage');
+        if($template===''){
+            $template='Обращение в службу технической поддержки № [LetterNum] отправлено, после выявления проблемы на указанный электронный ящик вам будет дан ответ.<br>С Уважением, служба тех.поддержки компании ЦИРИТАС';
+        }
+        $sentMessageHtml=str_replace('[LetterNum]',htmlspecialchars((string)$ticket,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8'),$template);
         $_SESSION['_support_csrf']=bin2hex(random_bytes(24));
         $form=['name'=>'','email'=>'','topic'=>'Вопрос','message'=>''];
     }catch(Throwable $e){
@@ -79,17 +120,10 @@ render_header('Поддержка');
 <section class="section"><div class="container">
 <div class="section-head"><div><h1>Поддержка</h1><p class="muted">Информация о технической поддержке</p></div></div>
 <?php
-try{
-    $q=db()->prepare('SELECT Content FROM csPages WHERE PageName=? LIMIT 1');
-    $q->execute(['Support']);
-    $r=$q->fetch();
-    $html=$r?public_page_html($r['Content']??''):'';
-    if($html!==''){
-        echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><div class="public-page-html">'.$html.'</div></div>';
-    }else{
-        echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><p>Свяжитесь с нами для получения технической поддержки.</p></div>';
-    }
-}catch(Throwable){
+$html=support_page_html('Support');
+if($html!==''){
+    echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><div class="public-page-html">'.$html.'</div></div>';
+}else{
     echo '<div class="content-card support-info-card"><h2>Техническая поддержка в приложениях</h2><p class="muted">Используйте встроенный в приложение модуль обращения в техподдержку</p><p>Свяжитесь с нами для получения технической поддержки.</p></div>';
 }
 ?>
@@ -97,10 +131,7 @@ try{
 <div class="content-card support-request-card">
     <h2>Обращение в техническую поддержку</h2>
     <?php if($sentTicket>0): ?>
-        <div class="support-success" role="status">
-            Обращение в службу технической поддержки № <?=htmlspecialchars((string)$sentTicket,ENT_QUOTES)?> отправлено, после выявления проблемы на указанный электронный ящик вам будет дан ответ.<br>
-            С Уважением, служба тех.поддержки компании ЦИРИТАС
-        </div>
+        <div class="support-success public-page-html" role="status"><?=$sentMessageHtml?></div>
     <?php else: ?>
         <p class="muted">Опишите вопрос или проблему. Ответ будет направлен на указанный электронный адрес.</p>
         <?php if($formError!==''): ?><div class="form-message error-box"><?=htmlspecialchars($formError,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></div><?php endif; ?>
