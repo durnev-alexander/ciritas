@@ -13,8 +13,17 @@ return [
         'photos_path' => '/absolute/path/to/photos',
     ],
     'mail' => [
-        'enabled' => false,
+        'enabled' => true,
+        'transport' => 'smtp',
+        'host' => 'smtp.example.com',
+        'port' => 587,
+        'encryption' => 'tls', // tls, ssl or none
+        'username' => 'site@example.com',
+        'password' => 'YOUR_SMTP_PASSWORD',
+        'timeout' => 15,
         'from' => 'site@example.com',
+        'from_name' => 'ЦИРИТАС',
         'order_to' => 'sales@example.com',
+        'support_to' => 'support@ciritas.ru',
     ],
 ];
