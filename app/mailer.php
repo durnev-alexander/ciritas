@@ -45,6 +45,7 @@ function mailer_headers(string $to,string $subject,?string $replyTo=null): array
     $headers=[
         'Date: '.date(DATE_RFC2822),
         'From: '.mailer_encode_header($fromName).' <'.$from.'>',
+        'Sender: <'.$from.'>',
         'To: <'.$to.'>',
         'Subject: '.mailer_encode_header($subject),
         'Message-ID: <'.bin2hex(random_bytes(12)).'@'.$host.'>',
@@ -112,10 +113,12 @@ function mailer_send_smtp(string $to,string $subject,string $body,?string $reply
 function mailer_send_php(string $to,string $subject,string $body,?string $replyTo=null): void {
     if(!cfg('mail.enabled',false)) throw new RuntimeException('Отправка почты отключена в конфигурации.');
     $to=mailer_address($to,'адрес получателя');
+    $from=mailer_from_address();
     $headers=mailer_headers($to,$subject,$replyTo);
     $headers=array_values(array_filter($headers,static fn(string $line): bool => !str_starts_with($line,'To: ') && !str_starts_with($line,'Subject: ')));
     $encodedSubject=mailer_encode_header($subject);
-    $ok=@mail($to,$encodedSubject,str_replace("\n","\r\n",mailer_normalize_body($body)),implode("\r\n",$headers));
+    $body=str_replace("\n","\r\n",mailer_normalize_body($body));
+    $ok=@mail($to,$encodedSubject,$body,implode("\r\n",$headers),'-f'.$from);
     if(!$ok) throw new RuntimeException('Почтовый сервис хостинга не принял письмо к отправке.');
 }
 
