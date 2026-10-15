@@ -28,13 +28,17 @@ render_header('Новости');
 <section class="section"><div class="container">
 <div class="section-head">
     <div><h1>Новости</h1><p class="muted">Новости компании за весь период</p></div>
-    <form method="get"><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" placeholder="Поиск по заголовку новости"></form>
+    <form method="get"><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" placeholder="Поиск"></form>
 </div>
 <?php
 try {
     $sql='SELECT * FROM csNews WHERE IsPublish=1';
     $params=[];
-    if($q!==''){$sql.=' AND Title LIKE ?';$params[]='%'.$q.'%';}
+    if($q!==''){
+        $sql.=' AND (Title LIKE ? OR ShortDescr LIKE ? OR FullDescr LIKE ?)';
+        $needle='%'.$q.'%';
+        $params=[$needle,$needle,$needle];
+    }
     $sql.=' ORDER BY NewsDate DESC, ID DESC';
     $st=db()->prepare($sql);$st->execute($params);$rows=$st->fetchAll();
     if(!$rows){echo '<div class="content-card"><p class="muted">По вашему запросу новости не найдены.</p></div>';}
