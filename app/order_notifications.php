@@ -1,9 +1,20 @@
 <?php
+require_once __DIR__.'/mailer.php';
 
 function order_notification_recipients(): array {
     $value = cfg('mail.order_to', '');
-    if (is_array($value)) return array_values(array_filter(array_map('trim', $value)));
-    return array_values(array_filter(array_map('trim', explode(',', (string)$value))));
+    if (is_array($value)) {
+        $recipients = array_values(array_filter(array_map('trim', $value)));
+    } else {
+        $recipients = array_values(array_filter(array_map('trim', explode(',', (string)$value))));
+    }
+
+    if (!$recipients) {
+        $fallback = trim((string)cfg('mail.support_to', ''));
+        if ($fallback !== '') $recipients = [$fallback];
+    }
+
+    return $recipients;
 }
 
 function order_send_notification(array $order): bool {
@@ -12,9 +23,9 @@ function order_send_notification(array $order): bool {
     if (!$recipients) return false;
 
     $number = (string)($order['number'] ?? '');
-    $subject = 'Новый заказ CIRITAS'.($number !== '' ? ' № '.$number : '');
+    $subject = 'Новый заказ ЦИРИТАС'.($number !== '' ? ' № '.$number : '');
     $lines = [
-        'На сайте CIRITAS оформлен новый заказ.',
+        'На сайте ЦИРИТАС оформлен новый заказ.',
         '',
         'Номер: '.($number !== '' ? $number : '—'),
         'Сумма: '.number_format((float)($order['total'] ?? 0), 0, ',', ' ').' ₽',
@@ -23,16 +34,18 @@ function order_send_notification(array $order): bool {
         'Телефон: '.trim((string)($order['phone'] ?? '')),
         'E-mail: '.trim((string)($order['email'] ?? '')),
     ];
-    $body = implode("\r\n", $lines);
+    $body = implode("\n", $lines);
+    $replyTo = trim((string)($order['email'] ?? ''));
+    if (!filter_var($replyTo, FILTER_VALIDATE_EMAIL)) $replyTo = null;
 
-    $from = trim((string)cfg('mail.from', ''));
-    $headers = ['Content-Type: text/plain; charset=UTF-8'];
-    if ($from !== '') $headers[] = 'From: '.$from;
-
-    $ok = true;
-    foreach ($recipients as $recipient) {
-        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) continue;
-        if (!@mail($recipient, '=?UTF-8?B?'.base64_encode($subject).'?=', $body, implode("\r\n", $headers))) $ok = false;
+    try {
+        foreach ($recipients as $recipient) {
+            $recipient = trim((string)$recipient);
+            if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) continue;
+            mailer_send($recipient, $subject, $body, $replyTo);
+        }
+        return true;
+    } catch (Throwable) {
+        return false;
     }
-    return $ok;
 }
