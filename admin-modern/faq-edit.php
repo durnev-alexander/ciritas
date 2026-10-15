@@ -56,10 +56,10 @@ admin_header($id?'Редактирование ЧАВО':'Новое ЧАВО');
 <div class="field full faq-question-active-row"><div class="faq-question-field"><label for="faqQuestion">Вопрос</label><input class="input" id="faqQuestion" name="question" required autofocus value="<?=aesc(a_legacy((string)($row['Question']??'')))?>"></div><label class="faq-active-field"><input type="checkbox" name="active" <?=!empty($row['IsActive'])?'checked':''?>> Активно</label></div>
 <div class="field full"><label for="faqAnswer">Ответ (HTML)</label><textarea class="textarea html-editor" id="faqAnswer" rows="16" name="answer"><?=aesc(a_legacy((string)($row['Answer']??'')))?></textarea></div>
 </div>
-<div class="actions faq-edit-actions"><button class="btn primary" type="submit">Сохранить</button><a class="btn" href="faq.php?topic=<?=(int)($row['CategoryID']??0)?>">Отмена</a></div>
+<div class="actions faq-edit-actions"><button class="btn primary" type="submit">Сохранить</button><a class="btn faq-edit-cancel" href="faq.php?topic=<?=(int)($row['CategoryID']??0)?>">Отмена</a></div>
 </form><?php endif;?>
 </div>
-<style>.faq-question-active-row{display:flex;align-items:flex-end;gap:18px}.faq-question-field{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0}.faq-active-field{display:flex;align-items:center;gap:8px;min-height:38px;margin-bottom:1px;white-space:nowrap}.faq-edit-actions{justify-content:flex-start;margin-top:18px}</style>
+<style>.faq-question-active-row{display:flex;align-items:flex-end;gap:18px}.faq-question-field{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0}.faq-active-field{display:flex;align-items:center;gap:8px;min-height:38px;margin-bottom:1px;white-space:nowrap}.faq-edit-actions{justify-content:flex-start;margin-top:18px}.faq-edit-cancel{margin-left:auto}</style>
 <script src="assets/js/html-editor.js"></script>
 <script>(function(){var question=document.getElementById('faqQuestion');if(!question)return;requestAnimationFrame(function(){question.focus();var len=question.value.length;try{question.setSelectionRange(len,len);}catch(e){}});})();</script>
 <?php admin_footer();
