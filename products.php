@@ -48,4 +48,4 @@ $st=db()->prepare($sql);
 $st->execute($params);
 $rows=$st->fetchAll();
 ?>
-<section class="section"><div class="container"><div class="section-head"><div><h1>Продукты</h1><p class="muted">Программные решения CIRITAS</p></div><form><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES)?>" placeholder="Поиск"></form></div><?php if($rows): ?><div class="product-list"><?php foreach($rows as $r) render_product_list_card($r,'h2'); ?></div><?php else: ?><div class="content-card"><p>По вашему запросу продукты не найдены.</p></div><?php endif; ?></div></section><?php render_footer();
+<section class="section"><div class="container"><div class="section-head"><div><h1>Продукты</h1><p class="muted">Программные решения ЦИРИТАС</p></div><form><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES)?>" placeholder="Поиск"></form></div><?php if($rows): ?><div class="product-list"><?php foreach($rows as $r) render_product_list_card($r,'h2'); ?></div><?php else: ?><div class="content-card"><p>По вашему запросу продукты не найдены.</p></div><?php endif; ?></div></section><?php render_footer();
