@@ -7,7 +7,26 @@ if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (empty($_SESSION['_cart_csrf'])) $_SESSION['_cart_csrf'] = bin2hex(random_bytes(24));
 $error='';
 
+function cart_ajax_payload(): array {
+    $items=[];
+    foreach(cart_items() as $item){
+        $items[(string)(int)$item['PriceID']]=[
+            'item_id'=>(int)$item['ID'],
+            'price_id'=>(int)$item['PriceID'],
+            'amount'=>(int)$item['Amount'],
+        ];
+    }
+    return ['ok'=>true,'csrf'=>(string)$_SESSION['_cart_csrf'],'items'=>$items,'total'=>cart_total()];
+}
+
+if($_SERVER['REQUEST_METHOD']==='GET' && (string)($_GET['ajax']??'')==='state'){
+    header('Content-Type: application/json; charset=utf-8');
+    try{echo json_encode(cart_ajax_payload(),JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);}catch(Throwable){http_response_code(500);echo json_encode(['ok'=>false,'message'=>'Не удалось загрузить корзину.'],JSON_UNESCAPED_UNICODE);}
+    exit;
+}
+
 if($_SERVER['REQUEST_METHOD']==='POST'){
+    $isAjax=(string)($_POST['_ajax']??'')==='1';
     if(!hash_equals((string)$_SESSION['_cart_csrf'],(string)($_POST['_csrf']??''))){$error='Сессия корзины устарела. Обновите страницу.';}
     else{
         try{
@@ -16,9 +35,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             elseif($action==='update') cart_update_item((int)($_POST['item_id']??0),(int)($_POST['amount']??1));
             elseif($action==='remove') cart_remove_item((int)($_POST['item_id']??0));
             $_SESSION['_cart_csrf']=bin2hex(random_bytes(24));
+            if($isAjax){header('Content-Type: application/json; charset=utf-8');echo json_encode(cart_ajax_payload(),JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);exit;}
             header('Location: cart.php');exit;
         }catch(Throwable $e){$error='Не удалось изменить корзину.';}
     }
+    if($isAjax){header('Content-Type: application/json; charset=utf-8');http_response_code(400);echo json_encode(['ok'=>false,'message'=>$error,'csrf'=>(string)$_SESSION['_cart_csrf']],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);exit;}
 }
 
 $items=[];$total=0.0;
