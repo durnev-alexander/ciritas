@@ -37,15 +37,36 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($form['message']==='') throw new RuntimeException('Введите текст обращения.');
         if(strlen($form['message'])>10000) throw new RuntimeException('Текст обращения слишком большой.');
 
-        $sentTicket=random_int(10000,99999);
+        $ticket=random_int(10000,99999);
         $to=trim((string)cfg('mail.support_to','support@ciritas.ru')) ?: 'support@ciritas.ru';
-        $subject='Обращение в техподдержку № '.$sentTicket.' — '.$form['topic'];
-        $body="Обращение № {$sentTicket}\n"
+        $sentAt=date('d.m.Y H:i:s');
+        $ip=trim((string)($_SERVER['REMOTE_ADDR']??''));
+        $userAgent=trim((string)($_SERVER['HTTP_USER_AGENT']??''));
+
+        $supportSubject='Обращение в техподдержку № '.$ticket.' — '.$form['topic'];
+        $supportBody="Обращение в службу технической поддержки № {$ticket}\n"
+            ."Дата и время: {$sentAt}\n"
             ."Тема: {$form['topic']}\n"
             ."Имя: {$form['name']}\n"
-            ."E-mail: {$form['email']}\n\n"
-            ."Сообщение:\n{$form['message']}\n";
-        mailer_send_smtp($to,$subject,$body,$form['email']);
+            ."E-mail для ответа: {$form['email']}\n"
+            .($ip!==''?"IP: {$ip}\n":'')
+            .($userAgent!==''?"Браузер: {$userAgent}\n":'')
+            ."\nТекст обращения:\n{$form['message']}\n";
+
+        $copySubject='Копия обращения в техподдержку ЦИРИТАС № '.$ticket;
+        $copyBody="Здравствуйте, {$form['name']}!\n\n"
+            ."От вашего имени направлено следующее обращение в службу технической поддержки компании ЦИРИТАС:\n\n"
+            ."Номер обращения: {$ticket}\n"
+            ."Дата и время: {$sentAt}\n"
+            ."Тема: {$form['topic']}\n\n"
+            ."Текст обращения:\n{$form['message']}\n\n"
+            ."После рассмотрения обращения ответ будет направлен на этот электронный адрес.\n\n"
+            ."С Уважением, служба тех.поддержки компании ЦИРИТАС\n";
+
+        mailer_send($to,$supportSubject,$supportBody,$form['email']);
+        mailer_send($form['email'],$copySubject,$copyBody,$to);
+
+        $sentTicket=$ticket;
         $_SESSION['_support_csrf']=bin2hex(random_bytes(24));
         $form=['name'=>'','email'=>'','topic'=>'Вопрос','message'=>''];
     }catch(Throwable $e){
