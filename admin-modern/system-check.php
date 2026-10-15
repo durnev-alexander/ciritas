@@ -16,13 +16,39 @@ $uploads=(string)cfg('site.uploads_path','');
 $photos=(string)cfg('site.photos_path','');
 $add('Каталог Uploads',$uploads!==''&&is_dir($uploads),$uploads);
 $add('Каталог photos',$photos!==''&&is_dir($photos),$photos);
-$add('Уведомления о заказах',!cfg('mail.enabled',false)||order_notification_ready(),cfg('mail.enabled',false)?'Включены':'Отключены — для прототипа это допустимо');
 
-function order_notification_ready():bool{
+[$mailReady,$mailDetails]=order_notification_check();
+$add('Уведомления о заказах',$mailReady,$mailDetails);
+
+function order_notification_check():array{
+    if(!cfg('mail.enabled',false)) return [true,'Отключены — для прототипа это допустимо'];
+
     $to=cfg('mail.order_to','');
-    $from=(string)cfg('mail.from','');
-    if(is_array($to))$to=implode(',',array_filter($to));
-    return trim((string)$to)!==''&&trim($from)!=='';
+    if(is_array($to)) $recipients=array_values(array_filter(array_map('trim',$to)));
+    else $recipients=array_values(array_filter(array_map('trim',explode(',',(string)$to))));
+    if(!$recipients){
+        $fallback=trim((string)cfg('mail.support_to',''));
+        if($fallback!=='') $recipients=[$fallback];
+    }
+
+    $validRecipient=false;
+    foreach($recipients as $recipient){
+        if(filter_var($recipient,FILTER_VALIDATE_EMAIL)){$validRecipient=true;break;}
+    }
+    if(!$validRecipient) return [false,'Не указан корректный адрес для уведомлений о заказах'];
+
+    $from=trim((string)cfg('mail.from',''));
+    if(!filter_var($from,FILTER_VALIDATE_EMAIL)) return [false,'Не указан корректный mail.from'];
+
+    $transport=strtolower(trim((string)cfg('mail.transport','smtp')));
+    if($transport==='mail'||$transport==='php'){
+        return [true,'Почтовый сервис хостинга; получатель: '.$recipients[0]];
+    }
+
+    $host=trim((string)cfg('mail.host',''));
+    $port=(int)cfg('mail.port',587);
+    if($host===''||$port<1) return [false,'Для SMTP не заполнены host/port'];
+    return [true,'SMTP '.$host.':'.$port.'; получатель: '.$recipients[0]];
 }
 
 admin_header('Проверка системы');
