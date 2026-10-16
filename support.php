@@ -117,7 +117,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 render_header('Поддержка');
 ?>
-<section class="section"><div class="container">
+<section class="section public-compact-section"><div class="container">
 <div class="section-head"><div><h1>Поддержка</h1><p class="muted">Информация о технической поддержке</p></div></div>
 <?php
 $html=support_page_html('Support');
