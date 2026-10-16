@@ -22,7 +22,7 @@ $selectedTopic=(int)($topics[0]['ID']??0);
 
 render_header('ЧАВО');
 ?>
-<section class="section"><div class="container">
+<section class="section public-compact-section"><div class="container">
 <div class="section-head"><div><h1>ЧАВО</h1><p class="muted">Часто задаваемые вопросы и ответы</p></div></div>
 
 <div class="content-card faq-public-card">
