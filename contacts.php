@@ -27,7 +27,8 @@ function contacts_trim_trailing_empty_html(string $html): string {
 
 render_header('Контакты');
 ?>
-<section class="section contacts-section"><div class="container"><h1>Контакты</h1>
+<section class="section contacts-section public-compact-section"><div class="container">
+<div class="section-head"><div><h1>Контакты</h1><p class="muted">Контактная информация и банковские реквизиты компании ЦИРИТАС</p></div></div>
 <?php foreach(['Contacts','Requisites'] as $name){
     try{
         $q=db()->prepare('SELECT Content FROM csPages WHERE PageName=? LIMIT 1');
