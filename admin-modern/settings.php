@@ -63,6 +63,7 @@ admin_header('Настройки');
     <form method="post">
         <input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>">
         <input type="hidden" name="form" value="settings">
+        <h2 style="margin:0 0 20px">Общие настройки</h2>
         <div class="grid" style="gap:14px">
             <?php foreach($rows as $r): ?>
                 <div class="field">
