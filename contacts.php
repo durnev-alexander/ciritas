@@ -29,7 +29,17 @@ render_header('Контакты');
 ?>
 <section class="section contacts-section public-compact-section"><div class="container">
 <div class="section-head"><div><h1>Контакты</h1><p class="muted">Контактная информация и банковские реквизиты компании ЦИРИТАС</p></div></div>
-<?php foreach(['Contacts','Requisites'] as $name){
+<?php
+try{
+    $q=db()->prepare('SELECT Content FROM csPages WHERE PageName=? LIMIT 1');
+    $q->execute(['MainPage']);
+    if($r=$q->fetch()){
+        $html=contacts_page_html($r['Content']??'');
+        if($html!=='') echo '<div class="content-card contacts-about"><h2>О компании</h2><div class="public-page-html">'.$html.'</div></div>';
+    }
+}catch(Throwable){}
+
+foreach(['Contacts','Requisites'] as $name){
     try{
         $q=db()->prepare('SELECT Content FROM csPages WHERE PageName=? LIMIT 1');
         $q->execute([$name]);
