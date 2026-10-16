@@ -47,10 +47,14 @@ try{$items=cart_items();$total=cart_total();}catch(Throwable){$error=$error?:'Н
 
 render_header('Корзина');
 ?>
-<section class="section public-compact-section"><div class="container"><div class="section-head"><div><h1>Корзина</h1><p class="lead">Проверьте выбранные лицензии перед оформлением заказа.</p></div></div>
+<section class="section public-compact-section cart-public-section"><div class="container"><div class="section-head"><div><h1>Корзина</h1><p class="muted">Проверьте выбранные лицензии перед оформлением заказа.</p></div></div>
 <?php if($error): ?><div class="form-message error-box"><?=htmlspecialchars($error)?></div><?php endif; ?>
-<?php if(!$items): ?><div class="content-card"><h2>Корзина пуста</h2><p class="muted">Добавьте нужную лицензию со страницы продукта.</p><a class="btn btn-primary" href="products.php">Перейти к продуктам</a></div>
-<?php else: ?><div class="content-card"><div class="table-responsive"><table class="cart-table"><thead><tr><th>Продукт</th><th>Лицензия</th><th>Цена</th><th>Количество</th><th>Сумма</th><th></th></tr></thead><tbody>
+<?php if(!$items): ?><div class="content-card cart-content-card"><h2>Корзина пуста</h2><p class="muted">Добавьте нужную лицензию со страницы продукта.</p><a class="btn btn-primary" href="products.php">Перейти к продуктам</a></div>
+<?php else: ?><div class="content-card cart-content-card"><div class="table-responsive"><table class="cart-table"><thead><tr><th>Продукт</th><th>Лицензия</th><th>Цена</th><th>Количество</th><th>Сумма</th><th></th></tr></thead><tbody>
 <?php foreach($items as $item): $sum=(float)$item['Price']*(int)$item['Amount']; ?><tr><td><?=htmlspecialchars(legacy((string)$item['ProductName']))?></td><td><?=htmlspecialchars(legacy((string)$item['Title']))?></td><td><?=number_format((float)$item['Price'],0,',',' ')?> ₽</td><td><form class="inline-form" method="post"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_cart_csrf'])?>"><input type="hidden" name="action" value="update"><input type="hidden" name="item_id" value="<?=(int)$item['ID']?>"><input class="input qty-input" type="number" min="1" max="999" name="amount" value="<?=(int)$item['Amount']?>"><button class="btn" type="submit">Обновить</button></form></td><td><strong><?=number_format($sum,0,',',' ')?> ₽</strong></td><td><form method="post"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_cart_csrf'])?>"><input type="hidden" name="action" value="remove"><input type="hidden" name="item_id" value="<?=(int)$item['ID']?>"><button class="btn" type="submit">Удалить</button></form></td></tr><?php endforeach; ?>
 </tbody></table></div><div class="cart-total"><span>Итого</span><strong><?=number_format($total,0,',',' ')?> ₽</strong></div><div class="product-actions"><a class="btn" href="products.php">Продолжить выбор</a><a class="btn btn-primary" href="order.php">Оформить заказ</a></div></div><?php endif; ?>
-</div></section><?php render_footer();
+</div></section>
+<style>
+.cart-content-card h2{margin:0 0 6px}.cart-content-card>p.muted{margin:0 0 18px}
+</style>
+<?php render_footer();
