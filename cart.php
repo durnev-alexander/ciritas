@@ -47,7 +47,7 @@ try{$items=cart_items();$total=cart_total();}catch(Throwable){$error=$error?:'Н
 
 render_header('Корзина');
 ?>
-<section class="section"><div class="container"><div class="section-head"><div><h1>Корзина</h1><p class="lead">Проверьте выбранные лицензии перед оформлением заказа.</p></div></div>
+<section class="section public-compact-section"><div class="container"><div class="section-head"><div><h1>Корзина</h1><p class="lead">Проверьте выбранные лицензии перед оформлением заказа.</p></div></div>
 <?php if($error): ?><div class="form-message error-box"><?=htmlspecialchars($error)?></div><?php endif; ?>
 <?php if(!$items): ?><div class="content-card"><h2>Корзина пуста</h2><p class="muted">Добавьте нужную лицензию со страницы продукта.</p><a class="btn btn-primary" href="products.php">Перейти к продуктам</a></div>
 <?php else: ?><div class="content-card"><div class="table-responsive"><table class="cart-table"><thead><tr><th>Продукт</th><th>Лицензия</th><th>Цена</th><th>Количество</th><th>Сумма</th><th></th></tr></thead><tbody>
