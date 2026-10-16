@@ -34,12 +34,12 @@ render_header('ЦИРИТАС');
 ?>
 <div class="home-page">
 <section class="hero"><div class="container"><h1>Программные решения</h1><p>Современные приложения для автоматизации и управления.</p></div></section>
-<section class="section home-products-section"><div class="container">
+<section class="section home-products-section public-compact-section"><div class="container">
 <div class="section-head"><div><h2>Продукты</h2><p class="muted">Основные продукты ЦИРИТАС</p></div><a href="products.php">Все продукты →</a></div>
 <?php if($products): ?><div class="product-list"><?php foreach($products as $p) render_product_list_card($p,'h3'); ?></div><?php else: ?><div class="content-card"><p>Продукты для главной страницы пока не выбраны.</p></div><?php endif; ?>
 </div></section>
 <?php if($newsCount>0 && $news): ?>
-<section class="section home-news-section"><div class="container">
+<section class="section home-news-section public-compact-section"><div class="container">
 <div class="section-head"><div><h2>Новости</h2><p class="muted">Последние новости ЦИРИТАС</p></div><a href="news.php">Все новости →</a></div>
 <div class="home-news-list">
 <?php foreach($news as $item): $title=legacy((string)($item['Title']??'')); $short=home_news_html($item['ShortDescr']??''); $date=home_news_date($item['NewsDate']??''); ?>
