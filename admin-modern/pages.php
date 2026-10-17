@@ -27,10 +27,11 @@ function page_preview_document(string $html): string {
 admin_header('Страницы');
 ?>
 <style>
-.pages-table{table-layout:fixed}
+.pages-table{width:100%;table-layout:fixed}
 .pages-table .page-preview-col{width:264px}
 .pages-table .page-name-col{width:auto}
-.pages-table .page-actions-col{width:1%;white-space:nowrap;text-align:right}
+.pages-table .page-actions-col{width:126px;white-space:nowrap;text-align:right}
+.pages-table th.page-actions-col,.pages-table td.page-actions-col{text-align:right}
 .page-html-preview-frame{display:block;width:240px;height:180px;border:1px solid var(--admin-line);border-radius:10px;background:#fff;overflow:hidden}
 .page-html-preview-frame iframe{display:block;width:240px;height:180px;border:0;background:#fff;pointer-events:none}
 .page-html-preview-empty{display:grid;place-items:center;width:240px;height:180px;border:1px solid var(--admin-line);border-radius:10px;background:var(--admin-soft);color:var(--admin-muted);font-size:13px}
