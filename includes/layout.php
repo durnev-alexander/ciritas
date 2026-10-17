@@ -19,4 +19,4 @@ function render_footer(): void {
     $address=htmlspecialchars($settings['FooterPostalAddress'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
     $phone=htmlspecialchars($settings['FooterPhone'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
     $email=htmlspecialchars($settings['FooterEmail'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
-    ?></main><footer class="site-footer"><div class="container site-footer-row"><div class="site-footer-copy"><?=$copyright?></div><div class="site-footer-contact">Почтовый адрес: <?=$address?>, тел.: <?=$phone?>, email: <?=$email?></div></div></footer><script src="assets/js/site.js"></script></body></html><?php }
+    ?></main><footer class="site-footer"><div class="container site-footer-row"><div class="site-footer-copy"><?=$copyright?></div><div class="site-footer-contact"><span class="site-footer-address">Почтовый адрес: <?=$address?>,</span> <span class="site-footer-phone">тел.: <?=$phone?>,</span> <span class="site-footer-email">email: <?=$email?></span></div></div></footer><script src="assets/js/site.js"></script></body></html><?php }
