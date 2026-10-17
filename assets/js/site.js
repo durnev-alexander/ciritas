@@ -14,6 +14,40 @@ document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(document.documentElement.dataset.theme||'light');
   buttons.forEach(button=>button.addEventListener('click',()=>applyTheme(button.dataset.themeValue)));
 
+  const liveSearchForm=document.querySelector('form[data-live-search]');
+  const liveSearchResults=document.querySelector('[data-live-search-results]');
+  if(liveSearchForm&&liveSearchResults){
+    const searchInput=liveSearchForm.querySelector('input[name="q"]');
+    let searchTimer=0;
+    let searchController=null;
+    const updateSearch=async()=>{
+      const url=new URL(window.location.href);
+      const query=(searchInput&&searchInput.value||'').trim();
+      if(query)url.searchParams.set('q',query);else url.searchParams.delete('q');
+      if(searchController)searchController.abort();
+      searchController=new AbortController();
+      try{
+        const response=await fetch(url.toString(),{credentials:'same-origin',signal:searchController.signal,headers:{'X-Requested-With':'live-search'}});
+        if(!response.ok)throw new Error('search');
+        const html=await response.text();
+        const doc=new DOMParser().parseFromString(html,'text/html');
+        const next=doc.querySelector('[data-live-search-results]');
+        if(!next)throw new Error('search-results');
+        liveSearchResults.replaceChildren(...[...next.childNodes].map(node=>node.cloneNode(true)));
+        window.history.replaceState({},'',url.pathname+url.search+url.hash);
+      }catch(error){
+        if(error&&error.name==='AbortError')return;
+      }
+    };
+    liveSearchForm.addEventListener('submit',event=>{event.preventDefault();clearTimeout(searchTimer);updateSearch();});
+    if(searchInput){
+      searchInput.addEventListener('input',()=>{
+        clearTimeout(searchTimer);
+        searchTimer=setTimeout(updateSearch,250);
+      });
+    }
+  }
+
   const licenseForms=[...document.querySelectorAll('form.inline-form[action="cart.php"]')].filter(form=>form.querySelector('input[name="action"][value="add"]')&&form.querySelector('input[name="price_id"]'));
   if(!licenseForms.length)return;
 
