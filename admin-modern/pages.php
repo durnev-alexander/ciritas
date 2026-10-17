@@ -38,6 +38,9 @@ admin_header('Страницы');
 .page-html-preview-empty{display:grid;place-items:center;width:240px;height:180px;border:1px solid var(--admin-line);border-radius:10px;background:var(--admin-soft);color:var(--admin-muted);font-size:13px}
 </style>
 <div class="card">
+<div class="toolbar">
+    <div><h2>Тексты для сайта</h2><div class="help">Данные тексты отображаются на страницах публичного сайта</div></div>
+</div>
 <div class="table-wrap"><table class="table pages-table"><thead><tr><th class="page-preview-col">Превью</th><th class="page-name-col">Страница</th><th class="page-actions-col">Действия</th></tr></thead><tbody>
 <?php foreach($rows as $r): ?>
 <?php $html=page_preview_html((string)($r['Content']??'')); ?>
