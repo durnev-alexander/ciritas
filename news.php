@@ -28,8 +28,9 @@ render_header('Новости');
 <section class="section public-compact-section"><div class="container">
 <div class="section-head">
     <div><h1>Новости</h1><p class="muted">Новости компании за весь период</p></div>
-    <form method="get"><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" placeholder="Поиск"></form>
+    <form method="get" data-live-search><input class="search" name="q" value="<?=htmlspecialchars($q,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" placeholder="Поиск" autocomplete="off"></form>
 </div>
+<div data-live-search-results>
 <?php
 try {
     $sql='SELECT * FROM csNews WHERE IsPublish=1';
@@ -59,5 +60,6 @@ try {
     echo '<p>Новости временно недоступны.</p>';
 }
 ?>
+</div>
 </div></section>
 <?php render_footer();
