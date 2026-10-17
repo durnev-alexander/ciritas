@@ -106,7 +106,7 @@ function product_image_url(array $product): string {
     if (!array_key_exists($id, $shotCache)) {
         $shotCache[$id] = '';
         try {
-            $sql = 'SELECT FileThumb,FileFull FROM csSoftShots WHERE SoftProductID=? ORDER BY '.product_shots_order_sql().' LIMIT 1';
+            $sql = 'SELECT FileThumb,FileFull FROM csSoftShots WHERE SoftProductID=?'.product_shots_active_sql().' ORDER BY '.product_shots_order_sql().' LIMIT 1';
             $q = db()->prepare($sql);
             $q->execute([$id]);
             $shot = $q->fetch();
