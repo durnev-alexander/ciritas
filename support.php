@@ -156,39 +156,44 @@ if($html!==''){
     <?php endif; ?>
 </div>
 
-<div class="content-card faq-public-card">
-    <h2>Темы</h2>
-    <?php if($faqTopics): ?>
-    <div class="table-responsive"><table class="faq-public-table faq-topics-public"><thead><tr><th>Название темы</th><th>Вопросов</th></tr></thead><tbody>
-    <?php foreach($faqTopics as $i=>$topic): $tid=(int)$topic['ID']; ?>
-        <tr class="faq-topic-row<?=$i===0?' active':''?>" tabindex="0" role="button" data-topic-id="<?=$tid?>" aria-selected="<?=$i===0?'true':'false'?>">
-            <td><?=htmlspecialchars(legacy((string)($topic['Title']??'')),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></td>
-            <td><?=(int)($topic['FaqCount']??0)?></td>
-        </tr>
-    <?php endforeach; ?>
-    </tbody></table></div>
-    <?php else: ?><p class="muted">Темы ЧАВО пока не опубликованы.</p><?php endif; ?>
-</div>
+<div class="content-card support-faq-card">
+    <h2>ЧАВО</h2>
+    <p class="muted">Часто задаваемые вопросы и ответы</p>
 
-<div class="content-card faq-public-card">
-    <h2>Вопросы</h2>
-    <?php if($faqTopics): ?>
-    <div class="table-responsive"><table class="faq-public-table faq-questions-public"><thead><tr><th>Вопрос</th></tr></thead><tbody>
-    <?php foreach($faqQuestions as $question): $qid=(int)$question['ID'];$tid=(int)$question['CategoryID'];$answer=public_page_html($question['Answer']??''); ?>
-        <tr class="faq-question-row" data-topic-id="<?=$tid?>" data-question-id="<?=$qid?>" <?=$tid===$selectedFaqTopic?'':'hidden'?>>
-            <td>
-                <button class="faq-question-toggle" type="button" aria-expanded="false" aria-controls="faqAnswer<?=$qid?>"><?=htmlspecialchars(legacy((string)($question['Question']??'')),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></button>
-                <div class="faq-answer public-page-html" id="faqAnswer<?=$qid?>" hidden><?=$answer?></div>
-            </td>
-        </tr>
-    <?php endforeach; ?>
-    </tbody></table></div>
-    <p class="muted faq-empty-topic" hidden>В выбранной теме пока нет опубликованных вопросов.</p>
-    <?php else: ?><p class="muted">Вопросы появятся после публикации первой темы.</p><?php endif; ?>
+    <div class="faq-subsection">
+        <h3>Темы</h3>
+        <?php if($faqTopics): ?>
+        <div class="table-responsive"><table class="faq-public-table faq-topics-public"><thead><tr><th>Название темы</th><th>Вопросов</th></tr></thead><tbody>
+        <?php foreach($faqTopics as $i=>$topic): $tid=(int)$topic['ID']; ?>
+            <tr class="faq-topic-row<?=$i===0?' active':''?>" tabindex="0" role="button" data-topic-id="<?=$tid?>" aria-selected="<?=$i===0?'true':'false'?>">
+                <td><?=htmlspecialchars(legacy((string)($topic['Title']??'')),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></td>
+                <td><?=(int)($topic['FaqCount']??0)?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody></table></div>
+        <?php else: ?><p class="muted">Темы ЧАВО пока не опубликованы.</p><?php endif; ?>
+    </div>
+
+    <div class="faq-subsection">
+        <h3>Вопросы</h3>
+        <?php if($faqTopics): ?>
+        <div class="table-responsive"><table class="faq-public-table faq-questions-public"><thead><tr><th>Вопрос</th></tr></thead><tbody>
+        <?php foreach($faqQuestions as $question): $qid=(int)$question['ID'];$tid=(int)$question['CategoryID'];$answer=public_page_html($question['Answer']??''); ?>
+            <tr class="faq-question-row" data-topic-id="<?=$tid?>" data-question-id="<?=$qid?>" <?=$tid===$selectedFaqTopic?'':'hidden'?>>
+                <td>
+                    <button class="faq-question-toggle" type="button" aria-expanded="false" aria-controls="faqAnswer<?=$qid?>"><?=htmlspecialchars(legacy((string)($question['Question']??'')),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></button>
+                    <div class="faq-answer public-page-html" id="faqAnswer<?=$qid?>" hidden><?=$answer?></div>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody></table></div>
+        <p class="muted faq-empty-topic" hidden>В выбранной теме пока нет опубликованных вопросов.</p>
+        <?php else: ?><p class="muted">Вопросы появятся после публикации первой темы.</p><?php endif; ?>
+    </div>
 </div>
 </div></section>
 <style>
-.support-info-card h2,.support-request-card h2,.faq-public-card h2{margin:0 0 6px}.support-info-card>.muted,.support-request-card>.muted{margin:0 0 18px}.support-info-card>.public-page-html{margin-top:0}.support-form{display:grid;gap:18px}.support-message{resize:vertical;min-height:150px}.support-actions{display:flex;justify-content:flex-start}.support-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}.support-success{padding:18px 20px;border:1px solid #86d6a6;border-radius:14px;background:#eefbf3;color:#17663a;line-height:1.65;font-weight:600}:root[data-theme="dark"] .support-success{background:#123022;color:#91e4b9;border-color:#2d7950}.faq-public-table{width:100%;border-collapse:collapse}.faq-public-table th,.faq-public-table td{padding:14px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.faq-public-table th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.04em;background:var(--soft)}.faq-public-table tbody tr:last-child td{border-bottom:0}.faq-topic-row{cursor:pointer;transition:.16s ease}.faq-topic-row td:first-child{font-weight:600}.faq-topic-row:hover{background:var(--soft)}.faq-topic-row.active{background:var(--soft-2);box-shadow:inset 4px 0 0 var(--navy)}.faq-topics-public th:last-child,.faq-topics-public td:last-child{width:1%;white-space:nowrap;text-align:center}.faq-question-row{transition:.16s ease}.faq-question-row.open{box-shadow:inset 4px 0 0 var(--navy)}.faq-question-toggle{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer}.faq-question-toggle:hover{color:var(--navy)}.faq-answer{margin-top:14px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--soft);line-height:1.7}.faq-answer>:first-child{margin-top:0}.faq-answer>:last-child{margin-bottom:0}
+.support-info-card h2,.support-request-card h2,.support-faq-card h2{margin:0 0 6px}.support-info-card>.muted,.support-request-card>.muted,.support-faq-card>.muted{margin:0 0 18px}.support-info-card>.public-page-html{margin-top:0}.support-form{display:grid;gap:18px}.support-message{resize:vertical;min-height:150px}.support-actions{display:flex;justify-content:flex-start}.support-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}.support-success{padding:18px 20px;border:1px solid #86d6a6;border-radius:14px;background:#eefbf3;color:#17663a;line-height:1.65;font-weight:600}:root[data-theme="dark"] .support-success{background:#123022;color:#91e4b9;border-color:#2d7950}.faq-subsection{margin-top:18px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--soft)}.faq-subsection h3{margin:0 0 12px;font-size:18px}.faq-public-table{width:100%;border-collapse:collapse;background:var(--card)}.faq-public-table th,.faq-public-table td{padding:14px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.faq-public-table th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.04em;background:var(--soft)}.faq-public-table tbody tr:last-child td{border-bottom:0}.faq-topic-row{cursor:pointer;transition:.16s ease}.faq-topic-row td:first-child{font-weight:600}.faq-topic-row:hover{background:var(--soft)}.faq-topic-row.active{background:var(--soft-2);box-shadow:inset 4px 0 0 var(--navy)}.faq-topics-public th:last-child,.faq-topics-public td:last-child{width:1%;white-space:nowrap;text-align:center}.faq-question-row{transition:.16s ease}.faq-question-row.open{box-shadow:inset 4px 0 0 var(--navy)}.faq-question-toggle{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer}.faq-question-toggle:hover{color:var(--navy)}.faq-answer{margin-top:14px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--soft);line-height:1.7}.faq-answer>:first-child{margin-top:0}.faq-answer>:last-child{margin-bottom:0}
 </style>
 <script>
 (function(){
