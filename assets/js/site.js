@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const licenseForms=[...document.querySelectorAll('form.inline-form[action="cart.php"]')].filter(form=>form.querySelector('input[name="action"][value="add"]')&&form.querySelector('input[name="price_id"]'));
   if(!licenseForms.length)return;
 
+  const cartSummary=document.querySelector('[data-cart-summary]');
   const setCsrf=value=>{
     if(!value)return;
     document.querySelectorAll('input[name="_csrf"]').forEach(input=>{input.value=value;});
@@ -72,12 +73,28 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
     });
   };
-  const request=async params=>{
+  const refreshCartSummary=async anchor=>{
+    if(!cartSummary)return;
+    const keepAnchor=anchor&&document.contains(anchor);
+    const before=keepAnchor?anchor.getBoundingClientRect().top:null;
+    const response=await fetch('cart.php?ajax=summary',{credentials:'same-origin',headers:{'Accept':'text/html'}});
+    if(!response.ok)throw new Error('Не удалось обновить корзину.');
+    cartSummary.innerHTML=await response.text();
+    if(before!==null&&document.contains(anchor)){
+      await new Promise(resolve=>requestAnimationFrame(()=>{
+        const after=anchor.getBoundingClientRect().top;
+        window.scrollBy(0,after-before);
+        resolve();
+      }));
+    }
+  };
+  const request=async(params,anchor=null)=>{
     params.set('_ajax','1');
     const response=await fetch('cart.php',{method:'POST',credentials:'same-origin',headers:{'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:params.toString()});
     const data=await response.json();
     if(!response.ok||!data.ok)throw new Error(data.message||'Не удалось изменить корзину.');
     applyState(data);
+    await refreshCartSummary(anchor);
     return data;
   };
 
@@ -102,7 +119,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       params.set('action','add');
       params.set('price_id',priceInput?priceInput.value:'0');
       params.set('amount',String(amount));
-      request(params).catch(()=>{});
+      request(params,form).catch(()=>{});
     });
 
     if(qty){
@@ -117,7 +134,7 @@ document.addEventListener('DOMContentLoaded',()=>{
           params.set('action','update');
           params.set('item_id',form.dataset.cartItemId);
           params.set('amount',String(amount));
-          request(params).catch(()=>{});
+          request(params,form).catch(()=>{});
         },250);
       });
       qty.addEventListener('change',()=>{
