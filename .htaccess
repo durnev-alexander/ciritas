@@ -3,6 +3,9 @@ DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
 RewriteEngine On
+# Canonical public host; preserve the requested path and query string.
+RewriteCond %{HTTP_HOST} ^ciritas\.ru$ [NC]
+RewriteRule ^(.*)$ https://www.ciritas.ru/$1 [R=301,L,NE]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 </IfModule>
