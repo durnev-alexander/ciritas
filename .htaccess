@@ -4,7 +4,7 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 # Legacy admin entry point; use existing admin-modern application.
-RewriteRule ^admin/?$ admin-modern/ [R=302,L,NE]
+RewriteRule ^admin/?$ https://www.ciritas.ru/admin-modern/login.php [R=302,L,NE]
 # Canonical public host; preserve the requested path and query string.
 RewriteCond %{HTTP_HOST} ^ciritas\.ru$ [NC]
 RewriteRule ^(.*)$ https://www.ciritas.ru/$1 [R=301,L,NE]
