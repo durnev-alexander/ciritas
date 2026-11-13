@@ -56,6 +56,28 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(!value)return;
     document.querySelectorAll('input[name="_csrf"]').forEach(input=>{input.value=value;});
   };
+  const trashIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>';
+  const syncCatalogQtyButton=form=>{
+    const control=form.querySelector('[data-catalog-qty]');
+    if(!control)return;
+    const minus=control.querySelector('[data-qty-minus]');
+    const input=control.querySelector('input[name="amount"]');
+    if(!minus||!input)return;
+    const amount=parseInt(input.value||'1',10)||1;
+    if(amount<=1){
+      minus.classList.add('cart-qty-remove-btn');
+      minus.innerHTML=trashIcon;
+      minus.title='Удалить из корзины';
+      minus.setAttribute('aria-label','Удалить из корзины');
+      minus.disabled=!form.dataset.cartItemId;
+    }else{
+      minus.classList.remove('cart-qty-remove-btn');
+      minus.textContent='−';
+      minus.title='Уменьшить количество';
+      minus.setAttribute('aria-label','Уменьшить количество');
+      minus.disabled=false;
+    }
+  };
   const applyState=state=>{
     setCsrf(state.csrf||'');
     licenseForms.forEach(form=>{
@@ -71,6 +93,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         form.dataset.cartItemId='';
         if(button){button.textContent='В корзину';button.classList.remove('btn-in-cart');}
       }
+      if(form.querySelector('[data-catalog-qty]'))syncCatalogQtyButton(form);
     });
   };
   const refreshCartSummary=async anchor=>{
@@ -108,6 +131,32 @@ document.addEventListener('DOMContentLoaded',()=>{
     const qty=form.querySelector('input[name="amount"]');
     const csrf=form.querySelector('input[name="_csrf"]');
     let timer=0;
+    const catalogControl=form.querySelector('[data-catalog-qty]');
+    if(catalogControl){
+      const minus=catalogControl.querySelector('[data-qty-minus]');
+      const plus=catalogControl.querySelector('[data-qty-plus]');
+      const changeAmount=delta=>{
+        const current=Math.max(1,Math.min(999,parseInt(qty&&qty.value||'1',10)||1));
+        const next=Math.max(1,Math.min(999,current+delta));
+        if(qty){qty.value=String(next);qty.dispatchEvent(new Event('input',{bubbles:true}));}
+        syncCatalogQtyButton(form);
+      };
+      plus&&plus.addEventListener('click',()=>changeAmount(1));
+      minus&&minus.addEventListener('click',()=>{
+        if(!qty)return;
+        const current=Math.max(1,Math.min(999,parseInt(qty.value||'1',10)||1));
+        if(current>1){changeAmount(-1);return;}
+        if(!form.dataset.cartItemId)return;
+        clearTimeout(timer);
+        const params=new URLSearchParams();
+        params.set('_csrf',csrf?csrf.value:'');
+        params.set('action','remove');
+        params.set('item_id',form.dataset.cartItemId);
+        request(params,form).then(()=>{qty.value='1';syncCatalogQtyButton(form);}).catch(()=>{});
+      });
+      qty&&qty.addEventListener('input',()=>syncCatalogQtyButton(form));
+      syncCatalogQtyButton(form);
+    }
 
     form.addEventListener('submit',event=>{
       event.preventDefault();
