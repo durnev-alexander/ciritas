@@ -49,8 +49,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   const licenseForms=[...document.querySelectorAll('form.inline-form[action="cart.php"]')].filter(form=>form.querySelector('input[name="action"][value="add"]')&&form.querySelector('input[name="price_id"]'));
-  if(!licenseForms.length)return;
-
   const cartSummary=document.querySelector('[data-cart-summary]');
   const setCsrf=value=>{
     if(!value)return;
@@ -78,7 +76,15 @@ document.addEventListener('DOMContentLoaded',()=>{
       minus.disabled=false;
     }
   };
+  const updateCartCount=state=>{
+    const badge=document.querySelector('[data-cart-count]');
+    if(!badge)return;
+    const count=Object.keys(state.items||{}).length;
+    badge.textContent=count>0?String(count):'';
+    badge.hidden=count===0;
+  };
   const applyState=state=>{
+    updateCartCount(state);
     setCsrf(state.csrf||'');
     licenseForms.forEach(form=>{
       const priceId=String(parseInt(form.querySelector('input[name="price_id"]').value||'0',10));
