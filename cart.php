@@ -51,7 +51,7 @@ function cart_catalog_licenses(): array {
         $productOrder=cart_sort_column('csSoftProducts');
         $priceOrder=cart_sort_column('csSoftPrices');
         $order=cart_order_part('g',$groupOrder,'Name').', '.cart_order_part('p',$productOrder,'Name').', '.cart_order_part('pr',$priceOrder,'ID');
-        $sql='SELECT pr.*, p.Name AS ProductName, p.OrderAllow FROM csSoftPrices pr JOIN csSoftProducts p ON p.ID=pr.SoftProductID LEFT JOIN csSoftGroups g ON g.ID=p.SoftGroupID WHERE p.IsActive=1 ORDER BY '.$order;
+        $sql='SELECT pr.*, p.Name AS ProductName, p.OrderAllow FROM csSoftPrices pr JOIN csSoftProducts p ON p.ID=pr.SoftProductID LEFT JOIN csSoftGroups g ON g.ID=p.SoftGroupID WHERE p.IsActive=1 AND '.price_active_condition('pr').' ORDER BY '.$order;
         return db()->query($sql)->fetchAll();
     } catch(Throwable) {
         return [];
