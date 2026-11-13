@@ -15,7 +15,7 @@ if(!$p){http_response_code(404);exit('Not found');}
 
 $prices=[];
 try {
-    $q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? ORDER BY ID');
+    $q=db()->prepare('SELECT * FROM csSoftPrices WHERE SoftProductID=? AND '.price_active_condition().' ORDER BY ID');
     $q->execute([$id]);
     $prices=$q->fetchAll();
 } catch(Throwable) {}
