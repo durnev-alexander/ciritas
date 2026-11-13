@@ -125,22 +125,62 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 $items=[];$total=0.0;$catalog=[];
 try{$items=cart_items();$total=cart_total();}catch(Throwable){$error=$error?:'Не удалось загрузить корзину.';}
 $catalog=cart_catalog_licenses();
+$activePrograms=[];
+try{
+    $q=db()->query('SELECT Name FROM csSoftProducts WHERE IsActive=1 ORDER BY Name');
+    $activePrograms=$q->fetchAll(PDO::FETCH_COLUMN);
+}catch(Throwable){}
 
 render_header('Корзина');
 ?>
 <section class="section public-compact-section cart-public-section"><div class="container"><div class="section-head"><div><h1>Корзина</h1><p class="muted">Выбранные лицензии для оформления заказа</p></div></div>
 <?php if($error): ?><div class="form-message error-box"><?=htmlspecialchars($error)?></div><?php endif; ?>
 <div data-cart-summary><?=cart_render_summary($items,$total)?></div>
-<?php if($catalog): ?><div class="content-card cart-license-catalog"><h2>Продукты и лицензии</h2><div class="license-list">
+<div class="content-card cart-license-catalog">
+<div class="section-head cart-license-head">
+    <div><h2>Продукты и лицензии</h2><p class="muted">Список продуктов и лицензий с учетом фильтра</p></div>
+    <div class="cart-license-search">
+        <label for="cartLicenseSearch" class="cart-search-label">Фильтр продуктов и лицензий</label>
+        <input id="cartLicenseSearch" class="search" type="search" placeholder="Поиск" list="cartActivePrograms" autocomplete="off" aria-controls="cartLicenseList">
+        <datalist id="cartActivePrograms"><?php foreach($activePrograms as $programName): ?><option value="<?=htmlspecialchars(legacy((string)$programName),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"></option><?php endforeach; ?></datalist>
+    </div>
+</div>
+<?php if($catalog): ?><div id="cartLicenseList" class="license-list">
 <?php foreach($catalog as $price): $title=legacy((string)($price['Title']??$price['Name']??'Лицензия')); ?>
-<div class="license-row"><div><div><strong><?=htmlspecialchars(legacy((string)$price['ProductName']))?></strong> <?=htmlspecialchars($title)?></div><div class="muted"><?=number_format((float)($price['Price']??0),0,',',' ')?> ₽</div></div><?php if((int)($price['OrderAllow']??1)===1): ?><form class="inline-form" method="post" action="cart.php"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_cart_csrf'])?>"><input type="hidden" name="action" value="add"><input type="hidden" name="price_id" value="<?=(int)$price['ID']?>"><input class="input qty-input" type="number" name="amount" min="1" max="999" value="1"><button class="btn btn-primary" type="submit">В корзину</button></form><?php endif; ?></div>
+<div class="license-row" data-license-search="<?=htmlspecialchars(legacy((string)$price['ProductName']).' '.$title,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"><div><div><strong><?=htmlspecialchars(legacy((string)$price['ProductName']))?></strong> <?=htmlspecialchars($title)?></div><div class="muted"><?=number_format((float)($price['Price']??0),0,',',' ')?> ₽</div></div><?php if((int)($price['OrderAllow']??1)===1): ?><form class="inline-form" method="post" action="cart.php"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_cart_csrf'])?>"><input type="hidden" name="action" value="add"><input type="hidden" name="price_id" value="<?=(int)$price['ID']?>"><input class="input qty-input" type="number" name="amount" min="1" max="999" value="1"><button class="btn btn-primary" type="submit">В корзину</button></form><?php endif; ?></div>
 <?php endforeach; ?>
-</div></div><?php endif; ?>
+</div><?php else: ?><div class="muted" id="cartLicenseList">Активных лицензий пока нет.</div><?php endif; ?>
+<p class="muted cart-license-no-results" id="cartLicenseNoResults" hidden>По вашему запросу продукты и лицензии не найдены.</p>
+</div>
 </div></section>
 <style>
-.cart-content-card{padding:0;background:transparent;border:0;box-shadow:none}.cart-content-card h2{margin:0 0 6px}.cart-content-card>p.muted{margin:0 0 18px}.cart-list{display:grid;gap:14px}.cart-item-row{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:18px;row-gap:8px;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 20px var(--shadow)}.cart-field{display:grid;grid-template-rows:18px minmax(40px,1fr);align-content:stretch;min-width:0;padding:0}.cart-field-label{font-size:12px;line-height:18px;color:var(--muted);font-weight:500;white-space:nowrap}.cart-field-value{display:flex;align-items:center;min-height:40px;line-height:1.35}.cart-product{flex:1 1 300px;min-width:300px}.cart-product-value{display:flex;align-items:center;white-space:normal;min-height:40px}.cart-product-line{line-height:1.35;overflow-wrap:anywhere}.cart-product strong{display:inline;overflow-wrap:anywhere}.cart-license-inline{display:inline;margin-left:8px;color:var(--muted);font-size:14px;line-height:1.35;overflow-wrap:anywhere}.cart-metrics{flex:0 0 auto;display:grid;grid-template-columns:100px 118px 110px;column-gap:18px;align-items:start;max-width:100%}.cart-price,.cart-sum{white-space:nowrap}.cart-qty-control{display:inline-grid;grid-template-columns:34px 48px 34px;align-items:stretch;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--input)}.cart-qty-btn{border:0;background:var(--soft);color:var(--text);font:inherit;font-size:20px;line-height:1;cursor:pointer;min-height:40px}.cart-qty-btn:hover{background:var(--soft-2);color:var(--navy)}.cart-qty-input{width:48px;min-width:0;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);border-radius:0;background:var(--input);color:var(--text);font:inherit;text-align:center;padding:0 4px;outline:0;-moz-appearance:textfield}.cart-qty-input::-webkit-outer-spin-button,.cart-qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.cart-qty-remove-btn{display:grid;place-items:center;background:#fff3f3;color:#d92d20}.cart-qty-remove-btn:hover{background:#ffe6e6;color:#d92d20}.cart-qty-remove-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}:root[data-theme="dark"] .cart-qty-remove-btn{background:#341b20;color:#ff8f9a}:root[data-theme="dark"] .cart-qty-remove-btn:hover{background:#442129;color:#ff8f9a}.cart-total{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;padding:17px 16px;background:var(--soft);border:1px solid var(--line);border-radius:14px}.cart-total span{margin-right:auto;text-align:left}.cart-total strong{margin-left:auto;text-align:right;white-space:nowrap}.cart-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:12px}.cart-actions .btn{flex:0 0 180px;min-width:180px;max-width:180px;white-space:nowrap}.cart-license-catalog{margin-top:24px}.cart-license-catalog h2{margin-top:0}.cart-license-catalog .license-row>div:first-child{min-width:0}
+.cart-content-card{padding:0;background:transparent;border:0;box-shadow:none}.cart-content-card h2{margin:0 0 6px}.cart-content-card>p.muted{margin:0 0 18px}.cart-list{display:grid;gap:14px}.cart-item-row{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:18px;row-gap:8px;padding:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 20px var(--shadow)}.cart-field{display:grid;grid-template-rows:18px minmax(40px,1fr);align-content:stretch;min-width:0;padding:0}.cart-field-label{font-size:12px;line-height:18px;color:var(--muted);font-weight:500;white-space:nowrap}.cart-field-value{display:flex;align-items:center;min-height:40px;line-height:1.35}.cart-product{flex:1 1 300px;min-width:300px}.cart-product-value{display:flex;align-items:center;white-space:normal;min-height:40px}.cart-product-line{line-height:1.35;overflow-wrap:anywhere}.cart-product strong{display:inline;overflow-wrap:anywhere}.cart-license-inline{display:inline;margin-left:8px;color:var(--muted);font-size:14px;line-height:1.35;overflow-wrap:anywhere}.cart-metrics{flex:0 0 auto;display:grid;grid-template-columns:100px 118px 110px;column-gap:18px;align-items:start;max-width:100%}.cart-price,.cart-sum{white-space:nowrap}.cart-qty-control{display:inline-grid;grid-template-columns:34px 48px 34px;align-items:stretch;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--input)}.cart-qty-btn{border:0;background:var(--soft);color:var(--text);font:inherit;font-size:20px;line-height:1;cursor:pointer;min-height:40px}.cart-qty-btn:hover{background:var(--soft-2);color:var(--navy)}.cart-qty-input{width:48px;min-width:0;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);border-radius:0;background:var(--input);color:var(--text);font:inherit;text-align:center;padding:0 4px;outline:0;-moz-appearance:textfield}.cart-qty-input::-webkit-outer-spin-button,.cart-qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.cart-qty-remove-btn{display:grid;place-items:center;background:#fff3f3;color:#d92d20}.cart-qty-remove-btn:hover{background:#ffe6e6;color:#d92d20}.cart-qty-remove-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}:root[data-theme="dark"] .cart-qty-remove-btn{background:#341b20;color:#ff8f9a}:root[data-theme="dark"] .cart-qty-remove-btn:hover{background:#442129;color:#ff8f9a}.cart-total{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;padding:17px 16px;background:var(--soft);border:1px solid var(--line);border-radius:14px}.cart-total span{margin-right:auto;text-align:left}.cart-total strong{margin-left:auto;text-align:right;white-space:nowrap}.cart-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:12px}.cart-actions .btn{flex:0 0 180px;min-width:180px;max-width:180px;white-space:nowrap}.cart-license-catalog{margin-top:24px}.cart-license-catalog .license-row>div:first-child{min-width:0}.cart-license-catalog .cart-license-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.cart-license-head h2{margin:0 0 6px}.cart-license-head .muted{margin:0}.cart-license-search{flex:0 1 270px;min-width:190px}.cart-license-search .search{box-sizing:border-box;width:100%;max-width:100%}.cart-search-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.cart-license-no-results{margin:14px 0 0}.cart-license-catalog .license-row[hidden],.cart-license-no-results[hidden]{display:none!important}
 @media(max-width:800px){.cart-item-row{display:grid;grid-template-columns:minmax(0,1fr);row-gap:4px}.cart-product{min-width:0;width:100%}.cart-metrics{justify-self:start}.cart-actions{margin-bottom:0}.cart-license-catalog .license-row{align-items:flex-start}}
-@media(max-width:620px){.cart-product{min-width:0;width:100%}}
+@media(max-width:620px){.cart-product{min-width:0;width:100%}.cart-license-catalog .cart-license-head{align-items:stretch;flex-direction:column}.cart-license-search{flex:auto;min-width:0;width:100%}}
 @media(max-width:420px){.cart-item-row{padding:14px 12px;row-gap:4px}.cart-metrics{width:100%;grid-template-columns:minmax(0,1fr) 116px minmax(0,1fr);column-gap:8px}.cart-price,.cart-sum{min-width:0}.cart-total strong{font-size:25px}.cart-actions .btn{flex:0 0 180px;min-width:180px;max-width:180px}}
 </style>
+<script>
+(function(){
+    var search=document.getElementById('cartLicenseSearch');
+    var list=document.getElementById('cartLicenseList');
+    var empty=document.getElementById('cartLicenseNoResults');
+    if(!search||!list)return;
+    var rows=Array.prototype.slice.call(list.querySelectorAll('[data-license-search]'));
+    var timer=0;
+    function normalize(value){return String(value||'').toLocaleLowerCase('ru').replace(/\\s+/g,' ').trim();}
+    function filter(){
+        var query=normalize(search.value);
+        var found=0;
+        rows.forEach(function(row){
+            var show=!query||normalize(row.getAttribute('data-license-search')).includes(query);
+            row.hidden=!show;
+            if(show)found++;
+        });
+        if(empty)empty.hidden=rows.length===0||found>0;
+    }
+    search.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(filter,120);});
+    search.addEventListener('change',function(){clearTimeout(timer);filter();});
+    filter();
+})();
+</script>
 <?php render_footer();
