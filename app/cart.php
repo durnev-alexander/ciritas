@@ -58,6 +58,28 @@ function price_active_condition(string $alias = ''): string {
     return $prefix.'`'.str_replace('`', '', $column).'`=1';
 }
 
+/**
+ * Match the license ordering column used by the product resources admin table.
+ */
+function price_sort_column(): ?string {
+    static $detected = false;
+    if ($detected !== false) return $detected;
+    $detected = null;
+    try {
+        $names = db()->query('SHOW COLUMNS FROM csSoftPrices')->fetchAll(PDO::FETCH_COLUMN);
+        foreach (['OrderIndex','SortOrder','SortIndex','Position','OrderNum','OrderID','Sort','Order'] as $candidate) {
+            foreach ($names as $name) {
+                if (strcasecmp((string)$name, $candidate) === 0) return $detected = (string)$name;
+            }
+        }
+        foreach ($names as $name) {
+            if (in_array(strtolower((string)$name), ['id','softproductid'], true)) continue;
+            if (preg_match('/(order|sort|position|index)/i',(string)$name)) return $detected = (string)$name;
+        }
+    } catch (Throwable) {}
+    return null;
+}
+
 function cart_add_price(int $priceId, int $amount = 1): void {
     if ($priceId < 1) throw new InvalidArgumentException('Не выбрана лицензия.');
     $q = db()->prepare('SELECT pr.ID, pr.SoftProductID FROM csSoftPrices pr JOIN csSoftProducts sp ON sp.ID=pr.SoftProductID WHERE pr.ID=? AND sp.IsActive=1 AND '.price_active_condition('pr').' LIMIT 1');
