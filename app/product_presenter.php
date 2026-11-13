@@ -181,7 +181,7 @@ function render_product_list_card(array $product, string $headingTag='h2'): void
     <article class="product-list-card">
         <<?=$tag?> class="product-list-title"><?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></<?=$tag?>>
         <div class="product-list-body<?=$image===''?' no-image':''?>">
-            <?php if($image!==''): ?><div class="product-list-image"><img src="<?=htmlspecialchars($image,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" alt="<?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"></div><?php endif; ?>
+            <?php if($image!==''): ?><a class="product-list-image" href="product.php?id=<?=$id?>" aria-label="Подробнее о программе <?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"><img src="<?=htmlspecialchars($image,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>" alt="<?=htmlspecialchars($name,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"></a><?php endif; ?>
             <div class="product-list-copy">
                 <?php if($description!==''): ?><div class="product-list-html"><?=$description?></div><?php endif; ?>
                 <a class="product-more" href="product.php?id=<?=$id?>">Подробнее...</a>
