@@ -143,6 +143,12 @@ render_header(legacy($p['Name']));
 <section class="section"><div class="container">
 <a href="products.php">← Все продукты</a>
 <h1><?=htmlspecialchars(legacy($p['Name']))?></h1>
+<?php if(product_html_has_content($shortDescr)): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
+
+<?php if(product_html_has_content($about)): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
+
+<?php if(product_html_has_content($features)): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
+
 <?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
 <?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; $shotName=legacy((string)($s['Name']??'')); ?>
 <a class="product-shot" href="<?=htmlspecialchars(product_photo_asset_url($full!==''?$full:$preview))?>" target="_blank" rel="noopener"><span class="product-shot-title"><?=htmlspecialchars($shotName)?></span><img src="<?=htmlspecialchars(product_photo_asset_url($preview))?>" alt="<?=htmlspecialchars($shotName)?>"></a>
@@ -165,12 +171,6 @@ try {
 } catch(Throwable) {}
 ?>
 <?php if($downloads): ?><div class="content-card"><h2>Скачать</h2><ul class="download-list"><?php foreach($downloads as $f): ?><li><a href="download.php?id=<?=(int)$f['ID']?>"><?=htmlspecialchars(legacy((string)($f['Description']??$f['File'])))?></a><?php if(!empty($f['Downloads'])): ?><span class="muted">Скачиваний: <?=(int)$f['Downloads']?></span><?php endif; ?></li><?php endforeach; ?></ul></div><?php endif; ?>
-
-<?php if(product_html_has_content($shortDescr)): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
-
-<?php if(product_html_has_content($about)): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
-
-<?php if(product_html_has_content($features)): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
 
 <?php foreach($textSections as $section): $sectionContent=product_html_trim_trailing_empty(product_html($section['Content']??'')); if(!product_html_has_content($sectionContent))continue; ?>
 <div class="content-card product-html"><h2><?=htmlspecialchars(legacy((string)($section['Title']??'')))?></h2><?=$sectionContent?></div>
