@@ -13,3 +13,8 @@ html{scrollbar-gutter:stable;min-height:100%}:root{--bg:#f5f7fb;--card:#fff;--te
 :root[data-theme="dark"] .cart-qty-remove-btn:hover{background:#442129;color:#ff8f9a}
 .cart-qty-btn:disabled{cursor:default;opacity:.55}
 .license-row .inline-form:has([data-catalog-qty]){flex-wrap:nowrap}
+
+/* Live count of distinct licenses in the header cart link. */
+.nav-cart-link{position:relative;display:inline-block}
+.nav-cart-count{position:absolute;top:-12px;right:-14px;display:flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#d92d20;color:#fff;font-size:11px;font-weight:700;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.18);pointer-events:none;font-variant-numeric:tabular-nums}
+.nav-cart-count[hidden]{display:none}
