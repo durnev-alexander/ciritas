@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const updateCartCount=state=>{
     const badge=document.querySelector('[data-cart-count]');
     if(!badge)return;
-    const count=Object.keys(state.items||{}).length;
+    const count=Object.values(state.items||{}).reduce((sum,item)=>sum+Math.max(0,Number(item.amount)||0),0);
     badge.textContent=count>0?String(count):'';
     badge.hidden=count===0;
   };
