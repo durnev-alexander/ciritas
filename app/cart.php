@@ -34,9 +34,33 @@ function cart_get_or_create(): array {
     return cart_current() ?: cart_create();
 }
 
+/**
+ * Current license visibility. Supports legacy schemas before the admin migration.
+ */
+function price_active_condition(string $alias = ''): string {
+    static $column = false;
+    if ($column === false) {
+        $column = '';
+        try {
+            $columns = db()->query('SHOW COLUMNS FROM csSoftPrices')->fetchAll(PDO::FETCH_COLUMN);
+            foreach (['IsActive', 'Active', 'IsEnabled', 'Enabled'] as $candidate) {
+                foreach ($columns as $name) {
+                    if (strcasecmp((string)$name, $candidate) === 0) {
+                        $column = (string)$name;
+                        break 2;
+                    }
+                }
+            }
+        } catch (Throwable) {}
+    }
+    if ($column === '') return '1=1';
+    $prefix = $alias !== '' ? $alias.'.' : '';
+    return $prefix.'`'.str_replace('`', '', $column).'`=1';
+}
+
 function cart_add_price(int $priceId, int $amount = 1): void {
     if ($priceId < 1) throw new InvalidArgumentException('Не выбрана лицензия.');
-    $q = db()->prepare('SELECT ID, SoftProductID FROM csSoftPrices WHERE ID=? LIMIT 1');
+    $q = db()->prepare('SELECT pr.ID, pr.SoftProductID FROM csSoftPrices pr JOIN csSoftProducts sp ON sp.ID=pr.SoftProductID WHERE pr.ID=? AND sp.IsActive=1 AND '.price_active_condition('pr').' LIMIT 1');
     $q->execute([$priceId]);
     $price = $q->fetch();
     if (!$price) throw new RuntimeException('Вариант лицензии не найден.');
@@ -73,7 +97,7 @@ function cart_items(?int $cartId = null): array {
         if (!$cart) return [];
         $cartId = (int)$cart['ID'];
     }
-    $sql = 'SELECT ci.ID,ci.CartID,ci.ProductID,ci.PriceID,ci.Amount,p.Title,p.Price,sp.Name AS ProductName FROM cart_items ci JOIN csSoftPrices p ON p.ID=ci.PriceID JOIN csSoftProducts sp ON sp.ID=ci.ProductID WHERE ci.CartID=? ORDER BY sp.Name,p.Title';
+    $sql = 'SELECT ci.ID,ci.CartID,ci.ProductID,ci.PriceID,ci.Amount,p.Title,p.Price,sp.Name AS ProductName FROM cart_items ci JOIN csSoftPrices p ON p.ID=ci.PriceID JOIN csSoftProducts sp ON sp.ID=ci.ProductID WHERE ci.CartID=? AND sp.IsActive=1 AND '.price_active_condition('p').' ORDER BY sp.Name,p.Title';
     $q = db()->prepare($sql);
     $q->execute([$cartId]);
     return $q->fetchAll();
