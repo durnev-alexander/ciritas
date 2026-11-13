@@ -6,7 +6,59 @@ function product_list_html(?string $value): string {
     if (str_contains($html, '&lt;') || str_contains($html, '&gt;')) {
         $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
-    return $html;
+    // Product summaries are stored as HTML and can contain unmatched closing
+    // tags. Normalize the fragment before placing the "Подробнее" link after it.
+    if (class_exists('DOMDocument')) {
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $doc = new DOMDocument('1.0', 'UTF-8');
+            $loaded = $doc->loadHTML('<?xml encoding="UTF-8"?><html><body><div id="ciritas-summary-root">'.$html.'</div></body></html>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+            if ($loaded) {
+                $body = $doc->getElementsByTagName('body')->item(0);
+                if ($body !== null) {
+                    $normalized = '';
+                    foreach ($body->childNodes as $node) {
+                        if ($node instanceof DOMElement && $node->getAttribute('id') === 'ciritas-summary-root') {
+                            foreach ($node->childNodes as $child) $normalized .= $doc->saveHTML($child);
+                        } else {
+                            $normalized .= $doc->saveHTML($node);
+                        }
+                    }
+                    return $normalized;
+                }
+            }
+        } catch (Throwable) {
+            // Use the lightweight balancer below if the HTML parser fails.
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+    }
+
+    // Fallback for PHP installations without ext-dom: discard stray closing
+    // tags and close any unclosed elements, keeping existing HTML formatting.
+    $tokens = preg_split('~(<!--.*?-->|</?[a-z][^>]*>)~is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+    if ($tokens === false) return $html;
+    $void = array_fill_keys(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'], true);
+    $stack = [];
+    $result = '';
+    foreach ($tokens as $token) {
+        if (!preg_match('~^<(/?)([a-z][a-z0-9:-]*)\\b~i', $token, $matches)) {
+            $result .= $token;
+            continue;
+        }
+        $tag = strtolower($matches[2]);
+        if ($matches[1] === '/') {
+            $position = array_search($tag, $stack, true);
+            if ($position === false) continue;
+            while (count($stack) > $position) $result .= '</'.array_pop($stack).'>';
+            continue;
+        }
+        $result .= $token;
+        if (!isset($void[$tag]) && !preg_match('~/\\s*>$~', $token)) $stack[] = $tag;
+    }
+    while ($stack) $result .= '</'.array_pop($stack).'>';
+    return $result;
 }
 
 function product_shots_columns(): array {
