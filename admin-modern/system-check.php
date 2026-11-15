@@ -2,12 +2,23 @@
 require __DIR__.'/includes/layout.php';
 
 
+function site_db():PDO {
+ static $pdo=null;
+ if($pdo instanceof PDO)return $pdo;
+ $dsn=sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',cfg('db.host'),(int)cfg('db.port',3306),cfg('db.name'));
+ $pdo=new PDO($dsn,(string)cfg('db.user'),(string)cfg('db.password'),[
+  PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,
+  PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,
+  PDO::ATTR_EMULATE_PREPARES=>false,
+ ]);
+ return $pdo;
+}
 $siteError='';$websites=[];
 try {
- db()->exec("CREATE TABLE IF NOT EXISTS csSystemCheckSites (ID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, Url VARCHAR(500) NOT NULL, OrderIndex INT NOT NULL DEFAULT 0) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+ site_db()->exec("CREATE TABLE IF NOT EXISTS csSystemCheckSites (ID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, Url VARCHAR(500) NOT NULL, OrderIndex INT NOT NULL DEFAULT 0) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 } catch(Throwable $e) {$siteError='Не удалось создать таблицу для сайтов. Проверьте права базы данных.';}
 
-function site_rows():array{return db()->query('SELECT ID,Url,OrderIndex FROM csSystemCheckSites ORDER BY OrderIndex,ID')->fetchAll();}
+function site_rows():array{return site_db()->query('SELECT ID,Url,OrderIndex FROM csSystemCheckSites ORDER BY OrderIndex,ID')->fetchAll();}
 function site_punycode_label(string $label):string {
  $chars=mb_str_split(mb_strtolower($label,'UTF-8'),1,'UTF-8');
  $codepoints=array_map('mb_ord',$chars);
@@ -44,7 +55,7 @@ function site_punycode_label(string $label):string {
  }
  return 'xn--'.$out;
 }
-function site_url(string $raw):string {
+function site_url(string $raw,bool $forRequest=true):string {
  $raw=trim($raw);
  if($raw===''||strlen($raw)>500||preg_match('/[\x00-\x20\x7f]/',$raw))throw new RuntimeException('Введите корректный адрес сайта.');
  if(str_contains($raw,'\\'))throw new RuntimeException('Недопустимые обратные слэши в адресе. Используйте прямые слэши /.');
@@ -72,11 +83,12 @@ function site_url(string $raw):string {
  foreach(explode('.',$host) as $label)if($label===''||strlen($label)>63||$label[0]==='-'||substr($label,-1)==='-')throw new RuntimeException('Некорректное имя домена.');
  $port=(int)($parts['port']??($scheme==='https'?443:80));
  if($port!==($scheme==='https'?443:80))throw new RuntimeException('Разрешены только стандартные порты HTTP/HTTPS.');
- // Save the ASCII representation for DNS, TLS/SNI and repeatable monitoring.
- return $scheme.'://'.$host.(isset($parts['port'])?':'.$port:'').($parts['path']??'').(isset($parts['query'])?'?'.$parts['query']:'');
+ // Preserve the entered Unicode domain in storage; convert to ASCII only for requests.
+ $requestUrl=$scheme.'://'.$host.(isset($parts['port'])?':'.$port:'').($parts['path']??'').(isset($parts['query'])?'?'.$parts['query']:'');
+ return $forRequest?$requestUrl:$raw;
 }
 function site_reorder(array $ids):void {
- $q=db()->prepare('UPDATE csSystemCheckSites SET OrderIndex=? WHERE ID=?');
+ $q=site_db()->prepare('UPDATE csSystemCheckSites SET OrderIndex=? WHERE ID=?');
  foreach($ids as $i=>$id)$q->execute([($i+1)*10,(int)$id]);
 }
 function site_ping(string $value):array {
@@ -111,17 +123,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['site_action'])){
   if($siteError!=='')throw new RuntimeException($siteError);
   $action=(string)$_POST['site_action'];$id=(int)($_POST['site_id']??0);
   if($action==='add'){
-   $url=site_url((string)($_POST['site_url']??''));$rows=site_rows();$position=max(1,min(count($rows)+1,(int)($_POST['position']??count($rows)+1)));
-   $q=db()->prepare('INSERT INTO csSystemCheckSites (Url,OrderIndex) VALUES (?,?)');$q->execute([$url,(count($rows)+1)*10]);
-   $new=(int)db()->lastInsertId();$ids=array_map('intval',array_column($rows,'ID'));array_splice($ids,$position-1,0,[$new]);site_reorder($ids);
+   $url=site_url((string)($_POST['site_url']??''),false);$rows=site_rows();$position=max(1,min(count($rows)+1,(int)($_POST['position']??count($rows)+1)));
+   $q=site_db()->prepare('INSERT INTO csSystemCheckSites (Url,OrderIndex) VALUES (?,?)');$q->execute([$url,(count($rows)+1)*10]);
+   $new=(int)site_db()->lastInsertId();$ids=array_map('intval',array_column($rows,'ID'));array_splice($ids,$position-1,0,[$new]);site_reorder($ids);
    [$reachable,$reason]=site_ping($url);admin_set_notice($reachable?'Сайт успешно добавлен. Проверка доступности пройдена.':'Сайт добавлен, но сейчас не работает или недоступен: '.$reason.'. Это может быть временное ограничение хостинга.',$reachable?'success':'error');
   }elseif($action==='save'&&$id>0){
-   $url=site_url((string)($_POST['site_url']??''));db()->prepare('UPDATE csSystemCheckSites SET Url=? WHERE ID=?')->execute([$url,$id]);[$reachable,$reason]=site_ping($url);admin_set_notice($reachable?'Сайт сохранён. Проверка доступности пройдена.':'Сайт сохранён, но сейчас не работает или недоступен: '.$reason.'. Это может быть временное ограничение хостинга.',$reachable?'success':'error');
+   $url=site_url((string)($_POST['site_url']??''),false);site_db()->prepare('UPDATE csSystemCheckSites SET Url=? WHERE ID=?')->execute([$url,$id]);[$reachable,$reason]=site_ping($url);admin_set_notice($reachable?'Сайт сохранён. Проверка доступности пройдена.':'Сайт сохранён, но сейчас не работает или недоступен: '.$reason.'. Это может быть временное ограничение хостинга.',$reachable?'success':'error');
   }elseif(($action==='up'||$action==='down')&&$id>0){
    $ids=array_map('intval',array_column(site_rows(),'ID'));$i=array_search($id,$ids,true);$j=$action==='up'?$i-1:$i+1;
    if($i!==false&&isset($ids[$j])){[$ids[$i],$ids[$j]]=[$ids[$j],$ids[$i]];site_reorder($ids);}
   }elseif($action==='delete'&&$id>0){
-   db()->prepare('DELETE FROM csSystemCheckSites WHERE ID=?')->execute([$id]);site_reorder(array_map('intval',array_column(site_rows(),'ID')));admin_set_notice('Сайт удалён из списка проверок.');
+   site_site_db()->prepare('DELETE FROM csSystemCheckSites WHERE ID=?')->execute([$id]);site_reorder(array_map('intval',array_column(site_rows(),'ID')));admin_set_notice('Сайт удалён из списка проверок.');
   }else throw new RuntimeException('Неизвестное действие.');
   redirect('system-check.php');
  }catch(Throwable $e){$siteError=$e->getMessage();admin_set_notice($siteError,'error');redirect('system-check.php');}
