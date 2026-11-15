@@ -8,6 +8,42 @@ try {
 } catch(Throwable $e) {$siteError='Не удалось создать таблицу для сайтов. Проверьте права базы данных.';}
 
 function site_rows():array{return db()->query('SELECT ID,Url,OrderIndex FROM csSystemCheckSites ORDER BY OrderIndex,ID')->fetchAll();}
+function site_punycode_label(string $label):string {
+ $chars=mb_str_split(mb_strtolower($label,'UTF-8'),1,'UTF-8');
+ $codepoints=array_map('mb_ord',$chars);
+ $out='';$basic=0;
+ foreach($codepoints as $code){if($code<128){$out.=chr($code);$basic++;}}
+ if($basic===count($codepoints))return $out;
+ $h=$basic;$n=128;$delta=0;$bias=72;
+ if($basic)$out.='-';
+ while($h<count($codepoints)){
+  $m=PHP_INT_MAX;
+  foreach($codepoints as $code)if($code>=$n&&$code<$m)$m=$code;
+  if($m===PHP_INT_MAX)throw new RuntimeException('Ошибка преобразования домена.');
+  $delta+=($m-$n)*($h+1);$n=$m;
+  foreach($codepoints as $code){
+   if($code<$n)$delta++;
+   if($code!==$n)continue;
+   $q=$delta;
+   for($k=36;;$k+=36){
+    $t=$k<=$bias?1:($k>=$bias+26?26:$k-$bias);
+    if($q<$t)break;
+    $digit=$t+(($q-$t)%(36-$t));
+    $out.=chr($digit<26?97+$digit:22+$digit);
+    $q=intdiv($q-$t,36-$t);
+   }
+   $out.=chr($q<26?97+$q:22+$q);
+   $d=$h===$basic?intdiv($delta,700):intdiv($delta,2);
+   $d+=intdiv($d,$h+1);
+   $k=0;
+   while($d>455){$d=intdiv($d,35);$k+=36;}
+   $bias=$k+intdiv(36*$d,$d+38);
+   $delta=0;$h++;
+  }
+  $delta++;$n++;
+ }
+ return 'xn--'.$out;
+}
 function site_url(string $raw):string {
  $raw=trim($raw);
  if($raw===''||strlen($raw)>500||preg_match('/[\x00-\x20\x7f]/',$raw))throw new RuntimeException('Введите корректный адрес сайта.');
@@ -15,10 +51,24 @@ function site_url(string $raw):string {
  $parts=parse_url($raw);
  if(!is_array($parts)||!in_array(strtolower((string)($parts['scheme']??'')),['http','https'],true)||empty($parts['host'])||isset($parts['user'])||isset($parts['pass'])||isset($parts['fragment']))throw new RuntimeException('Разрешены только адреса HTTP и HTTPS без авторизации.');
  $host=(string)$parts['host'];$scheme=strtolower((string)$parts['scheme']);
+ if(preg_match('/[^\x00-\x7f]/',$host)){
+  if(function_exists('idn_to_ascii')){
+   $converted=idn_to_ascii($host,IDNA_DEFAULT,INTL_IDNA_VARIANT_UTS46);
+   if($converted===false)throw new RuntimeException('Не удалось преобразовать кириллический домен.');
+   $host=$converted;
+  }else{
+   $labels=explode('.',$host);
+   foreach($labels as &$label)if(preg_match('/[^\x00-\x7f]/',$label))$label=site_punycode_label($label);
+   unset($label);$host=implode('.',$labels);
+  }
+ }
+ $host=strtolower($host);
  if(!preg_match('/^[a-z0-9.-]+$/i',$host)||strlen($host)>253||str_contains($host,'..')||!str_contains($host,'.'))throw new RuntimeException('Укажите публичное доменное имя сайта.');
+ foreach(explode('.',$host) as $label)if($label===''||strlen($label)>63||$label[0]==='-'||substr($label,-1)==='-')throw new RuntimeException('Некорректное имя домена.');
  $port=(int)($parts['port']??($scheme==='https'?443:80));
  if($port!==($scheme==='https'?443:80))throw new RuntimeException('Разрешены только стандартные порты HTTP/HTTPS.');
- return $raw;
+ // Save the ASCII representation for DNS, TLS/SNI and repeatable monitoring.
+ return $scheme.'://'.$host.(isset($parts['port'])?':'.$port:'').($parts['path']??'').(isset($parts['query'])?'?'.$parts['query']:'');
 }
 function site_reorder(array $ids):void {
  $q=db()->prepare('UPDATE csSystemCheckSites SET OrderIndex=? WHERE ID=?');
@@ -47,20 +97,20 @@ if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['site_action'])){
   if($siteError!=='')throw new RuntimeException($siteError);
   $action=(string)$_POST['site_action'];$id=(int)($_POST['site_id']??0);
   if($action==='add'){
-   $url=site_url((string)($_POST['site_url']??''));$rows=site_rows();$position=max(1,min(count($rows)+1,(int)($_POST['position']??count($rows)+1)));
+   $url=site_url((string)($_POST['site_url']??''));[$reachable,$reason]=site_ping($url);if(!$reachable)throw new RuntimeException('Сайт не добавлен: проверка доступности не пройдена ('.$reason.').');$rows=site_rows();$position=max(1,min(count($rows)+1,(int)($_POST['position']??count($rows)+1)));
    $q=db()->prepare('INSERT INTO csSystemCheckSites (Url,OrderIndex) VALUES (?,?)');$q->execute([$url,(count($rows)+1)*10]);
    $new=(int)db()->lastInsertId();$ids=array_map('intval',array_column($rows,'ID'));array_splice($ids,$position-1,0,[$new]);site_reorder($ids);
-   admin_set_notice('Сайт добавлен.');
+   admin_set_notice('Сайт успешно добавлен и доступен.');
   }elseif($action==='save'&&$id>0){
-   $url=site_url((string)($_POST['site_url']??''));db()->prepare('UPDATE csSystemCheckSites SET Url=? WHERE ID=?')->execute([$url,$id]);admin_set_notice('Сайт сохранён.');
+   $url=site_url((string)($_POST['site_url']??''));[$reachable,$reason]=site_ping($url);if(!$reachable)throw new RuntimeException('Сайт не сохранён: проверка доступности не пройдена ('.$reason.').');db()->prepare('UPDATE csSystemCheckSites SET Url=? WHERE ID=?')->execute([$url,$id]);admin_set_notice('Сайт сохранён.');
   }elseif(($action==='up'||$action==='down')&&$id>0){
    $ids=array_map('intval',array_column(site_rows(),'ID'));$i=array_search($id,$ids,true);$j=$action==='up'?$i-1:$i+1;
    if($i!==false&&isset($ids[$j])){[$ids[$i],$ids[$j]]=[$ids[$j],$ids[$i]];site_reorder($ids);}
   }elseif($action==='delete'&&$id>0){
-   db()->prepare('DELETE FROM csSystemCheckSites WHERE ID=?')->execute([$id]);site_reorder(array_map('intval',array_column(site_rows(),'ID')));admin_set_notice('Сайт удалён.');
+   db()->prepare('DELETE FROM csSystemCheckSites WHERE ID=?')->execute([$id]);site_reorder(array_map('intval',array_column(site_rows(),'ID')));admin_set_notice('Сайт удалён из списка проверок.');
   }else throw new RuntimeException('Неизвестное действие.');
   redirect('system-check.php');
- }catch(Throwable $e){$siteError=$e->getMessage();}
+ }catch(Throwable $e){$siteError=$e->getMessage();admin_set_notice($siteError,'error');redirect('system-check.php');}
 }
 if($siteError==='')try{
  $websites=site_rows();
