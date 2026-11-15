@@ -133,7 +133,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['site_action'])){
    $ids=array_map('intval',array_column(site_rows(),'ID'));$i=array_search($id,$ids,true);$j=$action==='up'?$i-1:$i+1;
    if($i!==false&&isset($ids[$j])){[$ids[$i],$ids[$j]]=[$ids[$j],$ids[$i]];site_reorder($ids);}
   }elseif($action==='delete'&&$id>0){
-   site_site_db()->prepare('DELETE FROM csSystemCheckSites WHERE ID=?')->execute([$id]);site_reorder(array_map('intval',array_column(site_rows(),'ID')));admin_set_notice('Сайт удалён из списка проверок.');
+   site_db()->prepare('DELETE FROM csSystemCheckSites WHERE ID=?')->execute([$id]);site_reorder(array_map('intval',array_column(site_rows(),'ID')));admin_set_notice('Сайт удалён из списка проверок.');
   }else throw new RuntimeException('Неизвестное действие.');
   redirect('system-check.php');
  }catch(Throwable $e){$siteError=$e->getMessage();admin_set_notice($siteError,'error');redirect('system-check.php');}
