@@ -138,6 +138,22 @@ $shortDescr = product_html($p['ShortDescr'] ?? '');
 $about = product_html($p['About'] ?? '');
 $features = product_html($p['Features'] ?? '');
 $textSections=product_text_sections_all($id,true);
+$downloads=[];
+try {
+    $order='ID';
+    $cols=db()->query('SHOW COLUMNS FROM csSoftDownloads')->fetchAll();
+    foreach($cols as $col){if(($col['Field']??'')==='OrderIndex'){$order='OrderIndex, ID';break;}}
+    $d=db()->prepare('SELECT * FROM csSoftDownloads WHERE SoftProductID=? AND IsActive=1 ORDER BY '.$order);
+    $d->execute([$id]);
+    $downloads=$d->fetchAll();
+} catch(Throwable) {}
+$visibleExtraSections=[];
+foreach($textSections as $section){
+    $sectionContent=product_html_trim_trailing_empty(product_html($section['Content']??''));
+    if(product_html_has_content($sectionContent))$visibleExtraSections[]=['Title'=>$section['Title']??'','Content'=>$sectionContent];
+}
+$showFeatures=product_html_has_content($features);
+$showAbout=product_html_has_content($about);
 
 $seo=product_seo_find($id);
 $canonical='https://www.ciritas.ru/product.php?id='.$id;
@@ -152,35 +168,34 @@ render_header(legacy($p['Name']),[
 <a href="products.php">← Все продукты</a>
 <h1><?=htmlspecialchars(legacy($p['Name']))?></h1>
 <?php if(product_html_has_content($shortDescr)): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
+<?php if($showFeatures||$showAbout||$shots||$prices||$downloads||$visibleExtraSections): ?>
+<nav class="product-section-nav" aria-label="Разделы программы">
+<?php if($showFeatures): ?><a href="#product-features">Возможности</a><?php endif; ?>
+<?php if($showAbout): ?><a href="#product-about">О программе</a><?php endif; ?>
+<?php if($shots): ?><a href="#product-shots">Скриншоты</a><?php endif; ?>
+<?php if($prices): ?><a href="#product-prices">Цены и лицензии</a><?php endif; ?>
+<?php if($downloads): ?><a href="#product-downloads">Скачать</a><?php endif; ?>
+<?php if($visibleExtraSections): ?><a href="#product-extra">Дополнительная информация</a><?php endif; ?>
+</nav>
+<?php endif; ?>
 
-<?php if(product_html_has_content($features)): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
+<?php if($showFeatures): ?><div id="product-features" class="content-card product-html product-detail-section"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
 
-<?php if(product_html_has_content($about)): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
+<?php if($showAbout): ?><div id="product-about" class="content-card product-html product-detail-section"><?=$about?></div><?php endif; ?>
 
-<?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
+<?php if($shots): ?><div id="product-shots" class="content-card product-detail-section"><h2>Скриншоты</h2><div class="product-shot-grid">
 <?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; $shotName=legacy((string)($s['Name']??'')); ?>
 <a class="product-shot" href="<?=htmlspecialchars(product_photo_asset_url($full!==''?$full:$preview))?>" target="_blank" rel="noopener"><span class="product-shot-title"><?=htmlspecialchars($shotName)?></span><img src="<?=htmlspecialchars(product_photo_asset_url($preview))?>" alt="<?=htmlspecialchars($shotName)?>"></a>
 <?php endforeach; ?>
 </div></div><?php endif; ?>
 
-<?php if($prices): ?><div class="content-card"><h2>Цены и лицензии</h2><div class="license-list">
+<?php if($prices): ?><div id="product-prices" class="content-card product-detail-section"><h2>Цены и лицензии</h2><div class="license-list">
 <?php foreach($prices as $price): ?><div class="license-row"><div><strong><?=htmlspecialchars(legacy((string)($price['Title']??$price['Name']??'Лицензия')))?></strong><div class="muted"><?=number_format((float)($price['Price']??0),0,',',' ')?> ₽</div></div><?php if(!isset($p['OrderAllow']) || (int)$p['OrderAllow']===1): ?><form class="inline-form" method="post" action="cart.php"><input type="hidden" name="_csrf" value="<?=htmlspecialchars($_SESSION['_cart_csrf'])?>"><input type="hidden" name="action" value="add"><input type="hidden" name="price_id" value="<?=(int)$price['ID']?>"><div class="cart-qty-control cart-catalog-qty" data-catalog-qty><button class="cart-qty-btn cart-qty-remove-btn" type="button" data-qty-minus aria-label="Удалить из корзины" title="Удалить из корзины" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button><input class="cart-qty-input" type="number" name="amount" min="1" max="999" value="1" aria-label="Количество лицензий"><button class="cart-qty-btn" type="button" data-qty-plus aria-label="Увеличить количество" title="Увеличить количество">+</button></div><button class="btn btn-primary" type="submit">В корзину</button></form><?php endif; ?></div><?php endforeach; ?>
 </div></div><?php endif; ?>
 
-<?php
-$downloads=[];
-try {
-    $order='ID';
-    $cols=db()->query('SHOW COLUMNS FROM csSoftDownloads')->fetchAll();
-    foreach($cols as $col){if(($col['Field']??'')==='OrderIndex'){$order='OrderIndex, ID';break;}}
-    $d=db()->prepare('SELECT * FROM csSoftDownloads WHERE SoftProductID=? AND IsActive=1 ORDER BY '.$order);
-    $d->execute([$id]);
-    $downloads=$d->fetchAll();
-} catch(Throwable) {}
-?>
-<?php if($downloads): ?><div class="content-card"><h2>Скачать</h2><ul class="download-list"><?php foreach($downloads as $f): ?><li><a href="download.php?id=<?=(int)$f['ID']?>"><?=htmlspecialchars(legacy((string)($f['Description']??$f['File'])))?></a><?php if(!empty($f['Downloads'])): ?><span class="muted">Скачиваний: <?=(int)$f['Downloads']?></span><?php endif; ?></li><?php endforeach; ?></ul></div><?php endif; ?>
+<?php if($downloads): ?><div id="product-downloads" class="content-card product-detail-section"><h2>Скачать</h2><ul class="download-list"><?php foreach($downloads as $f): ?><li><a href="download.php?id=<?=(int)$f['ID']?>"><?=htmlspecialchars(legacy((string)($f['Description']??$f['File'])))?></a><?php if(!empty($f['Downloads'])): ?><span class="muted">Скачиваний: <?=(int)$f['Downloads']?></span><?php endif; ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 
-<?php foreach($textSections as $section): $sectionContent=product_html_trim_trailing_empty(product_html($section['Content']??'')); if(!product_html_has_content($sectionContent))continue; ?>
-<div class="content-card product-html"><h2><?=htmlspecialchars(legacy((string)($section['Title']??'')))?></h2><?=$sectionContent?></div>
+<?php foreach($visibleExtraSections as $i=>$section): ?>
+<div <?=$i===0?'id="product-extra" ':''?>class="content-card product-html product-detail-section"><h2><?=htmlspecialchars(legacy((string)$section['Title']))?></h2><?=$section['Content']?></div>
 <?php endforeach; ?>
 </div></section><?php render_footer();
