@@ -88,8 +88,17 @@ function site_ping(string $value):array {
  if(defined('CURLOPT_PROTOCOLS_STR'))curl_setopt($ch,CURLOPT_PROTOCOLS_STR,$scheme);
  else curl_setopt($ch,CURLOPT_PROTOCOLS,$scheme==='https'?CURLPROTO_HTTPS:CURLPROTO_HTTP);
  curl_exec($ch);$status=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE);$error=curl_error($ch);curl_close($ch);
- // Any HTTP response demonstrates availability, even 403 or 404.
- return $status>0?[true,'HTTP '.$status]:[false,$error?:'Нет ответа'];
+ // An HTTP error means the page rejected the probe or is unavailable.
+ if($status>=200&&$status<400)return [true,'HTTP '.$status];
+ if($status===401)return [false,'HTTP 401 — требуется авторизация'];
+ if($status===403)return [false,'HTTP 403 — сервер отклонил запрос (доступ запрещён)'];
+ if($status===404)return [false,'HTTP 404 — страница не найдена'];
+ if($status===405)return [false,'HTTP 405 — сервер отклонил метод проверки HEAD'];
+ if($status===429)return [false,'HTTP 429 — слишком много запросов, сервер ограничил доступ'];
+ if($status>=500)return [false,'HTTP '.$status.' — ошибка сервера'];
+ if($status>=400)return [false,'HTTP '.$status.' — сервер отклонил запрос'];
+ if($error!=='')return [false,'Ошибка подключения: '.$error];
+ return [false,'Сервер не ответил на запрос'];
 }
 if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['site_action'])){
  csrf_check();
