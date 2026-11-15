@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__.'/app/bootstrap.php';
+require __DIR__.'/app/product_seo.php';
 
 // Sitemap is generated from published product records, not hand-maintained.
 try {
@@ -23,9 +24,10 @@ $urls = [
     $base.'/support.php',
     $base.'/contacts.php',
 ];
+ $excluded=product_seo_hidden_ids();
 foreach ($products as $id) {
     $id=(int)$id;
-    if($id>0)$urls[]=$base.'/product.php?id='.$id;
+    if($id>0&&!isset($excluded[$id]))$urls[]=$base.'/product.php?id='.$id;
 }
 echo '<?xml version="1.0" encoding="UTF-8"?>', "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', "\n";
