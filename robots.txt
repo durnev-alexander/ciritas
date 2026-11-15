@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /admin-modern/
+Disallow: /admin/
+Disallow: /app/
+Disallow: /config/
+Disallow: /includes/
+Disallow: /cart.php
+Disallow: /checkout.php
+Disallow: /order.php
+Disallow: /download.php
+Disallow: /api/
+Disallow: /*?q=
+Sitemap: https://www.ciritas.ru/sitemap.xml
