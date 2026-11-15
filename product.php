@@ -4,6 +4,7 @@ require __DIR__.'/app/cart.php';
 require __DIR__.'/app/product_presenter.php';
 require __DIR__.'/app/product_text_sections.php';
 require __DIR__.'/app/product_seo.php';
+require __DIR__.'/app/product_structured_data.php';
 require __DIR__.'/includes/layout.php';
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (empty($_SESSION['_cart_csrf'])) $_SESSION['_cart_csrf'] = bin2hex(random_bytes(24));
@@ -163,6 +164,8 @@ render_header(legacy($p['Name']),[
     'canonical'=>$canonical,
     'indexable'=>(int)($seo['IsIndexable']??1)===1,
 ]);
+$jsonLd=product_software_json_ld($p,$seo,$prices,$canonical);
+if($jsonLd!=='')echo '<script type="application/ld+json">'.$jsonLd.'</script>';
 ?>
 <section class="section"><div class="container">
 <a href="products.php">← Все продукты</a>
