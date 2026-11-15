@@ -3,6 +3,7 @@ require __DIR__.'/app/bootstrap.php';
 require __DIR__.'/app/cart.php';
 require __DIR__.'/app/product_presenter.php';
 require __DIR__.'/app/product_text_sections.php';
+require __DIR__.'/app/product_seo.php';
 require __DIR__.'/includes/layout.php';
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 if (empty($_SESSION['_cart_csrf'])) $_SESSION['_cart_csrf'] = bin2hex(random_bytes(24));
@@ -138,7 +139,14 @@ $about = product_html($p['About'] ?? '');
 $features = product_html($p['Features'] ?? '');
 $textSections=product_text_sections_all($id,true);
 
-render_header(legacy($p['Name']));
+$seo=product_seo_find($id);
+$canonical='https://www.ciritas.ru/product.php?id='.$id;
+render_header(legacy($p['Name']),[
+    'title'=>(string)($seo['SeoTitle']??''),
+    'description'=>(string)($seo['SeoDescription']??''),
+    'canonical'=>$canonical,
+    'indexable'=>(int)($seo['IsIndexable']??1)===1,
+]);
 ?>
 <section class="section"><div class="container">
 <a href="products.php">← Все продукты</a>
