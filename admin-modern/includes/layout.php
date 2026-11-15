@@ -45,6 +45,7 @@ function admin_header(string $title): void {
 function admin_footer(): void {
     if(basename((string)($_SERVER['SCRIPT_NAME']??''))==='product-assets.php') require __DIR__.'/product-text-sections.php';
     $status=$_SESSION['admin_status_notice']??null;
+    unset($_SESSION['admin_status_notice']);
     $statusMessage=is_array($status)?(string)($status['message']??''):'';
     $statusType=is_array($status)&&($status['type']??'')==='error'?'error':'success';
     $hasStatus=$statusMessage!=='';
