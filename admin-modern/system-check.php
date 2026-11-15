@@ -55,6 +55,59 @@ function site_punycode_label(string $label):string {
  }
  return 'xn--'.$out;
 }
+
+function site_decode_punycode_label(string $label):string {
+ if(strncasecmp($label,'xn--',4)!==0)return $label;
+ $encoded=strtolower(substr($label,4));
+ if($encoded==='')throw new RuntimeException('Некорректный Punycode-домен.');
+ $n=128;$i=0;$bias=72;$out=[];
+ $dash=strrpos($encoded,'-');
+ $pos=0;
+ if($dash!==false){
+  for($j=0;$j<$dash;$j++){$cp=ord($encoded[$j]);if($cp>=128)throw new RuntimeException('Некорректный Punycode-домен.');$out[]=$cp;}
+  $pos=$dash+1;
+ }
+ while($pos<strlen($encoded)){
+  $old=$i;$w=1;
+  for($k=36;;$k+=36){
+   if($pos>=strlen($encoded))throw new RuntimeException('Некорректный Punycode-домен.');
+   $c=ord($encoded[$pos++]);
+   $digit=($c>=97&&$c<=122)?$c-97:(($c>=48&&$c<=57)?$c-22:-1);
+   if($digit<0)throw new RuntimeException('Некорректный Punycode-домен.');
+   if($digit>intdiv(PHP_INT_MAX-$i,$w))throw new RuntimeException('Слишком длинный Punycode-домен.');
+   $i+=$digit*$w;
+   $t=$k<=$bias?1:($k>=$bias+26?26:$k-$bias);
+   if($digit<$t)break;
+   if($w>intdiv(PHP_INT_MAX,36-$t))throw new RuntimeException('Слишком длинный Punycode-домен.');
+   $w*=36-$t;
+  }
+  $size=count($out)+1;$delta=$i-$old;
+  $d=$old===0?intdiv($delta,700):intdiv($delta,2);
+  $d+=intdiv($d,$size);$k=0;
+  while($d>455){$d=intdiv($d,35);$k+=36;}
+  $bias=$k+intdiv(36*$d,$d+38);
+  $n+=intdiv($i,$size);$i%= $size;
+  if($n>0x10ffff||($n>=0xd800&&$n<=0xdfff))throw new RuntimeException('Некорректный символ в Punycode-домене.');
+  array_splice($out,$i,0,[$n]);$i++;
+ }
+ $decoded='';
+ foreach($out as $cp)$decoded.=mb_chr($cp,'UTF-8');
+ if(strtolower(site_punycode_label($decoded))!==strtolower($label))throw new RuntimeException('Некорректный Punycode-домен.');
+ return $decoded;
+}
+function site_unicode_host(string $host):string {
+ $labels=explode('.',$host);
+ foreach($labels as &$label){
+  if(strncasecmp($label,'xn--',4)!==0)continue;
+  if(function_exists('idn_to_utf8')){
+   $decoded=idn_to_utf8($label,IDNA_DEFAULT,INTL_IDNA_VARIANT_UTS46);
+   if($decoded===false)throw new RuntimeException('Не удалось преобразовать Punycode-домен.');
+   $label=$decoded;
+  }else $label=site_decode_punycode_label($label);
+ }
+ unset($label);
+ return implode('.',$labels);
+}
 function site_url(string $raw,bool $forRequest=true):string {
  $raw=trim($raw);
  if($raw===''||strlen($raw)>500||preg_match('/[\x00-\x20\x7f]/',$raw))throw new RuntimeException('Введите корректный адрес сайта.');
@@ -83,9 +136,10 @@ function site_url(string $raw,bool $forRequest=true):string {
  foreach(explode('.',$host) as $label)if($label===''||strlen($label)>63||$label[0]==='-'||substr($label,-1)==='-')throw new RuntimeException('Некорректное имя домена.');
  $port=(int)($parts['port']??($scheme==='https'?443:80));
  if($port!==($scheme==='https'?443:80))throw new RuntimeException('Разрешены только стандартные порты HTTP/HTTPS.');
- // Preserve the entered Unicode domain in storage; convert to ASCII only for requests.
- $requestUrl=$scheme.'://'.$host.(isset($parts['port'])?':'.$port:'').($parts['path']??'').(isset($parts['query'])?'?'.$parts['query']:'');
- return $forRequest?$requestUrl:$raw;
+ // Network requests use ASCII; stored addresses display readable Unicode domains.
+ $suffix=(isset($parts['port'])?':'.$port:'').($parts['path']??'').(isset($parts['query'])?'?'.$parts['query']:'');
+ $requestUrl=$scheme.'://'.$host.$suffix;
+ return $forRequest?$requestUrl:$scheme.'://'.site_unicode_host($host).$suffix;
 }
 function site_reorder(array $ids):void {
  $q=site_db()->prepare('UPDATE csSystemCheckSites SET OrderIndex=? WHERE ID=?');
