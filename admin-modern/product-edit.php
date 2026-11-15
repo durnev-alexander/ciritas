@@ -2,6 +2,22 @@
 require __DIR__.'/includes/layout.php';
 require __DIR__.'/../app/product_seo.php';
 $id=(int)($_GET['id']??0);
+
+// The legacy ShortDescr field can be VARCHAR; expand it without changing
+// its encoding or existing content before accepting longer descriptions.
+function product_ensure_short_description_capacity(): void {
+    $q=db()->query("SHOW COLUMNS FROM csSoftProducts LIKE 'ShortDescr'");
+    $col=$q->fetch();
+    if(!$col)throw new RuntimeException('Поле ShortDescr не найдено в таблице программ.');
+    $type=strtolower((string)$col['Type']);
+    if(str_contains($type,'mediumtext')||str_contains($type,'longtext'))return;
+    $nullable=strtoupper((string)$col['Null'])==='YES'?'NULL':'NOT NULL';
+    db()->exec('ALTER TABLE csSoftProducts MODIFY COLUMN ShortDescr MEDIUMTEXT '.$nullable);
+}
+$shortDescriptionError='';
+try { product_ensure_short_description_capacity(); }
+catch(Throwable $e) { $shortDescriptionError='Не удалось увеличить поле краткого описания: '.$e->getMessage(); }
+
 $seoError='';
 try { product_seo_ensure_schema(); } catch(Throwable $e) { $seoError='Не удалось подготовить таблицу SEO-настроек: '.$e->getMessage(); }
 $seo=['SeoTitle'=>'','SeoDescription'=>'','SeoKeywords'=>'','IsIndexable'=>1];
@@ -53,6 +69,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $error='SEO-заголовок или описание превышает допустимую длину.';
     }elseif($seoError!==''){
         $error=$seoError;
+    }elseif($shortDescriptionError!==''){
+        $error=$shortDescriptionError;
     }elseif($rawName===''){
         $error='Укажите название продукта.';
     }else{
@@ -82,6 +100,7 @@ admin_header($id?'Редактирование продукта':'Новый п�
 ?>
 <?php if(!empty($_GET['saved'])) admin_notice('Продукт сохранён.','success'); ?>
 <?php if(!empty($error)) admin_notice($error,'error'); ?>
+<?php if($shortDescriptionError!=='') admin_notice($shortDescriptionError,'error'); ?>
 <?php if($seoError!==''&&!isset($error)) admin_notice($seoError,'error'); ?>
 <div class="card">
 <form method="post"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><div class="form-grid">
@@ -89,7 +108,7 @@ admin_header($id?'Редактирование продукта':'Новый п�
 <div class="field"><label class="label">Группа</label><select class="select" name="group" required><?php foreach($groups as $g): ?><option value="<?=$g['ID']?>" <?=$row['SoftGroupID']==$g['ID']?'selected':''?>><?=aesc(a_legacy($g['Name']))?></option><?php endforeach; ?></select></div>
 <?php if($columns['OrderIndex']): ?><div class="field"><label class="label">Порядок</label><input class="input" type="number" name="orderIndex" value="<?=(int)($row['OrderIndex']??0)?>"></div><?php endif; ?>
 <div class="field"><label class="checkbox"><input type="checkbox" name="active" <?=$row['IsActive']?'checked':''?>> Активен на сайте</label><?php if($columns['OrderAllow']): ?><label class="checkbox"><input type="checkbox" name="orderAllow" <?=!empty($row['OrderAllow'])?'checked':''?>> Разрешить оформление заказа</label><?php endif; ?></div>
-<div class="field full"><label class="label">Краткое описание (HTML)</label><textarea class="textarea html-editor" name="shortDescr" rows="5"><?=aesc(a_legacy($row['ShortDescr']??''))?></textarea></div>
+<div class="field full"><label class="label">Краткое описание (HTML)</label><textarea class="textarea html-editor" name="shortDescr" rows="10"><?=aesc(a_legacy($row['ShortDescr']??''))?></textarea></div>
 <?php if($columns['PriceDescr']): ?><div class="field full"><label class="label">Описание цены</label><textarea class="textarea" name="priceDescr" rows="3"><?=aesc(a_legacy($row['PriceDescr']??''))?></textarea></div><?php endif; ?>
 <div class="field full"><label class="label">О программе (HTML)</label><textarea class="textarea html-editor" name="about" rows="10"><?=aesc(a_legacy($row['About']??''))?></textarea></div>
 <div class="field full"><label class="label">Возможности (HTML)</label><textarea class="textarea html-editor" name="features" rows="8"><?=aesc(a_legacy($row['Features']??''))?></textarea></div>
