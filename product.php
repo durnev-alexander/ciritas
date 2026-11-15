@@ -153,9 +153,9 @@ render_header(legacy($p['Name']),[
 <h1><?=htmlspecialchars(legacy($p['Name']))?></h1>
 <?php if(product_html_has_content($shortDescr)): ?><div class="lead product-html"><?=$shortDescr?></div><?php endif; ?>
 
-<?php if(product_html_has_content($about)): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
-
 <?php if(product_html_has_content($features)): ?><div class="content-card product-html"><h2>Возможности</h2><?=$features?></div><?php endif; ?>
+
+<?php if(product_html_has_content($about)): ?><div class="content-card product-html"><?=$about?></div><?php endif; ?>
 
 <?php if($shots): ?><div class="content-card"><h2>Скриншоты</h2><div class="product-shot-grid">
 <?php foreach($shots as $s): ?><?php $full=legacy((string)($s['FileFull']??'')); $thumb=legacy((string)($s['FileThumb']??'')); $preview=$full!==''?$full:$thumb; if($preview==='') continue; $shotName=legacy((string)($s['Name']??'')); ?>
