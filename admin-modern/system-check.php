@@ -47,6 +47,11 @@ function site_punycode_label(string $label):string {
 function site_url(string $raw):string {
  $raw=trim($raw);
  if($raw===''||strlen($raw)>500||preg_match('/[\x00-\x20\x7f]/',$raw))throw new RuntimeException('Введите корректный адрес сайта.');
+ if(str_contains($raw,'\\'))throw new RuntimeException('Недопустимые обратные слэши в адресе. Используйте прямые слэши /.');
+ if(preg_match('~^[a-z][a-z0-9+.-]*:~i',$raw) && !preg_match('~^https?://~i',$raw))
+  throw new RuntimeException('Недопустимый протокол или разделители. Используйте http:// или https://.');
+ if(str_starts_with($raw,'//') || str_starts_with($raw,'/'))
+  throw new RuntimeException('Некорректное начало адреса.');
  if(!preg_match('~^https?://~i',$raw))$raw='https://'.$raw;
  $parts=parse_url($raw);
  if(!is_array($parts)||!in_array(strtolower((string)($parts['scheme']??'')),['http','https'],true)||empty($parts['host'])||isset($parts['user'])||isset($parts['pass'])||isset($parts['fragment']))throw new RuntimeException('Разрешены только адреса HTTP и HTTPS без авторизации.');
@@ -106,12 +111,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['site_action'])){
   if($siteError!=='')throw new RuntimeException($siteError);
   $action=(string)$_POST['site_action'];$id=(int)($_POST['site_id']??0);
   if($action==='add'){
-   $url=site_url((string)($_POST['site_url']??''));[$reachable,$reason]=site_ping($url);if(!$reachable)throw new RuntimeException('Сайт не добавлен: проверка доступности не пройдена ('.$reason.').');$rows=site_rows();$position=max(1,min(count($rows)+1,(int)($_POST['position']??count($rows)+1)));
+   $url=site_url((string)($_POST['site_url']??''));$rows=site_rows();$position=max(1,min(count($rows)+1,(int)($_POST['position']??count($rows)+1)));
    $q=db()->prepare('INSERT INTO csSystemCheckSites (Url,OrderIndex) VALUES (?,?)');$q->execute([$url,(count($rows)+1)*10]);
    $new=(int)db()->lastInsertId();$ids=array_map('intval',array_column($rows,'ID'));array_splice($ids,$position-1,0,[$new]);site_reorder($ids);
-   admin_set_notice('Сайт успешно добавлен и доступен.');
+   [$reachable,$reason]=site_ping($url);admin_set_notice($reachable?'Сайт успешно добавлен. Проверка доступности пройдена.':'Сайт добавлен, но сейчас не работает или недоступен: '.$reason.'. Это может быть временное ограничение хостинга.',$reachable?'success':'error');
   }elseif($action==='save'&&$id>0){
-   $url=site_url((string)($_POST['site_url']??''));[$reachable,$reason]=site_ping($url);if(!$reachable)throw new RuntimeException('Сайт не сохранён: проверка доступности не пройдена ('.$reason.').');db()->prepare('UPDATE csSystemCheckSites SET Url=? WHERE ID=?')->execute([$url,$id]);admin_set_notice('Сайт сохранён.');
+   $url=site_url((string)($_POST['site_url']??''));db()->prepare('UPDATE csSystemCheckSites SET Url=? WHERE ID=?')->execute([$url,$id]);[$reachable,$reason]=site_ping($url);admin_set_notice($reachable?'Сайт сохранён. Проверка доступности пройдена.':'Сайт сохранён, но сейчас не работает или недоступен: '.$reason.'. Это может быть временное ограничение хостинга.',$reachable?'success':'error');
   }elseif(($action==='up'||$action==='down')&&$id>0){
    $ids=array_map('intval',array_column(site_rows(),'ID'));$i=array_search($id,$ids,true);$j=$action==='up'?$i-1:$i+1;
    if($i!==false&&isset($ids[$j])){[$ids[$i],$ids[$j]]=[$ids[$j],$ids[$i]];site_reorder($ids);}
