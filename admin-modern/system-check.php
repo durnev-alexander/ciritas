@@ -158,7 +158,24 @@ function site_ping(string $value):array {
  curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_NOBODY=>true,CURLOPT_CONNECTTIMEOUT=>2,CURLOPT_TIMEOUT=>4,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,CURLOPT_RESOLVE=>[$host.':'.$port.':'.$ip],CURLOPT_USERAGENT=>'CIRITAS-System-Check/1.0']);
  if(defined('CURLOPT_PROTOCOLS_STR'))curl_setopt($ch,CURLOPT_PROTOCOLS_STR,$scheme);
  else curl_setopt($ch,CURLOPT_PROTOCOLS,$scheme==='https'?CURLPROTO_HTTPS:CURLPROTO_HTTP);
- curl_exec($ch);$status=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE);$error=curl_error($ch);curl_close($ch);
+ curl_exec($ch);$status=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE);$error=curl_error($ch);$errno=curl_errno($ch);curl_close($ch);
+ // A certificate name/chain failure does not mean the HTTP service is down.
+ // Only retry certificate failures; never silently disable verification for other requests.
+ if($scheme==='https'&&in_array($errno,[51,60],true)){
+  $retry=curl_init($url);
+  if($retry!==false){
+   curl_setopt_array($retry,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_NOBODY=>true,CURLOPT_CONNECTTIMEOUT=>2,CURLOPT_TIMEOUT=>4,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_SSL_VERIFYPEER=>false,CURLOPT_SSL_VERIFYHOST=>0,CURLOPT_RESOLVE=>[$host.':'.$port.':'.$ip],CURLOPT_USERAGENT=>'CIRITAS-System-Check/1.0']);
+   if(defined('CURLOPT_PROTOCOLS_STR'))curl_setopt($retry,CURLOPT_PROTOCOLS_STR,$scheme);
+   elseif(defined('CURLOPT_PROTOCOLS'))curl_setopt($retry,CURLOPT_PROTOCOLS,CURLPROTO_HTTPS);
+   curl_exec($retry);
+   $retryStatus=(int)curl_getinfo($retry,CURLINFO_RESPONSE_CODE);
+   $retryError=curl_error($retry);
+   curl_close($retry);
+   if($retryStatus>=200&&$retryStatus<400)return [true,'HTTP '.$retryStatus.' — предупреждение: SSL-сертификат недействителен для этого домена или не доверен ('.$error.')'];
+   if($retryStatus>0){$status=$retryStatus;$error='SSL-сертификат требует исправления: '.$error;}
+   elseif($retryError!=='')$error.='; повторная проверка: '.$retryError;
+  }
+ }
  // An HTTP error means the page rejected the probe or is unavailable.
  if($status>=200&&$status<400)return [true,'HTTP '.$status];
  if($status===401)return [false,'HTTP 401 — требуется авторизация'];
@@ -262,7 +279,7 @@ $failed=count(array_filter($checks,fn($c)=>!$c['ok']));
 <?php foreach($websites as $i=>$site): $fid='site_form_'.(int)$site['ID']; ?>
 <tr>
 <td class="site-check-name"><form id="<?=aesc($fid)?>" method="post" action="system-check.php"><input type="hidden" name="_csrf" value="<?=aesc(csrf_token())?>"><input type="hidden" name="site_id" value="<?=(int)$site['ID']?>"></form><input form="<?=aesc($fid)?>" class="input" name="site_url" type="text" maxlength="500" required value="<?=aesc((string)$site['Url'])?>"></td>
-<td class="site-check-status"><span class="site-check-<?=$site['online']?'on':'off'?>" title="<?=aesc((string)$site['detail'])?>"><?=$site['online']?'Активен':'Не активен'?></span></td>
+<td class="site-check-status"><span class="site-check-<?=$site['online']?'on':'off'?>" title="<?=aesc((string)$site['detail'])?>"><?=$site['online']?'Активен':'Не активен'?></span><?php if($site['online']&&str_contains((string)$site['detail'],'предупреждение: SSL')): ?><span class="site-check-ssl-warning" title="<?=aesc((string)$site['detail'])?>">SSL ⚠</span><?php endif; ?></td>
 <td class="site-check-sort"><div class="actions"><button class="btn sort-btn" form="<?=aesc($fid)?>" name="site_action" value="up" formnovalidate <?=$i===0?'disabled':''?> title="Выше">↑</button><button class="btn sort-btn" form="<?=aesc($fid)?>" name="site_action" value="down" formnovalidate <?=$i===count($websites)-1?'disabled':''?> title="Ниже">↓</button></div></td>
 <td class="site-check-actions"><div class="actions"><button class="btn" form="<?=aesc($fid)?>" name="site_action" value="save">Сохранить</button><button class="btn danger js-site-delete" type="button" data-id="<?=(int)$site['ID']?>" data-name="<?=aesc((string)$site['Url'])?>">Удалить</button></div></td>
 </tr>
@@ -281,6 +298,7 @@ $failed=count(array_filter($checks,fn($c)=>!$c['ok']));
 .site-check-table .site-check-position{min-width:76px;width:100%;text-align:center}
 .site-check-table .site-check-on{color:#238a49;font-weight:600}
 .site-check-table .site-check-off{color:#db4b4b;font-weight:600}
+.site-check-table .site-check-ssl-warning{display:block;color:#e4a342;font-size:11px;font-weight:600;cursor:help;margin-top:3px}
 .site-check-table tbody:has(tr:nth-child(2)) tr:last-child .site-check-actions .actions,.site-check-table tbody:has(tr:nth-child(2)) tr:last-child .site-check-actions .btn{width:100%}
 </style>
 <script>(function(){
