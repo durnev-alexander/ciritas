@@ -2,13 +2,19 @@
 require __DIR__.'/app/bootstrap.php';
 require __DIR__.'/includes/layout.php';
 
-function news_html(?string $value): string {
-    $html = legacy($value ?? '');
-    if ($html === '') return '';
-    if (str_contains($html, '&lt;') || str_contains($html, '&gt;')) {
-        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+function news_decode_entities(string $value): string {
+    // Legacy news may contain HTML entities encoded more than once.
+    // Decode at most three layers while preserving actual HTML markup.
+    for ($i = 0; $i < 3; $i++) {
+        $decoded = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if ($decoded === $value) break;
+        $value = $decoded;
     }
-    return $html;
+    return $value;
+}
+
+function news_html(?string $value): string {
+    return news_decode_entities(legacy($value ?? ''));
 }
 
 function public_news_date(mixed $value): string {
@@ -44,7 +50,7 @@ try {
     $st=db()->prepare($sql);$st->execute($params);$rows=$st->fetchAll();
     if(!$rows){echo '<div class="content-card"><p class="muted">По вашему запросу новости не найдены.</p></div>';}
     foreach ($rows as $r):
-        $title = legacy((string)($r['Title'] ?? ''));
+        $title = news_decode_entities(legacy((string)($r['Title'] ?? '')));
         $short = news_html($r['ShortDescr'] ?? '');
         $full = news_html($r['FullDescr'] ?? '');
 ?>
