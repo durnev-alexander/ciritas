@@ -55,7 +55,11 @@ function product_html(?string $value): string {
         if($decoded===$html) break;
         $html=$decoded;
     }
-    return product_html_remove_backgrounds($html);
+    // Normalize each legacy HTML fragment independently. Some old product
+    // descriptions contain unclosed <font>/<span>/<div> tags; without
+    // balancing them, their text styling leaks into subsequent sections
+    // (screenshots, license prices, download links).
+    return product_list_html(product_html_remove_backgrounds($html));
 }
 
 function product_html_has_content(string $html): bool {
