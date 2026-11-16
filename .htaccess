@@ -3,11 +3,28 @@ DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
 RewriteEngine On
-# Legacy admin entry point; use existing admin-modern application.
-RewriteRule ^admin/?$ https://www.ciritas.ru/admin-modern/login.php [R=302,L,NE]
-# Canonical public host; preserve the requested path and query string.
+
+# Canonical public host. Preserve the path and query string.
 RewriteCond %{HTTP_HOST} ^ciritas\.ru$ [NC]
 RewriteRule ^(.*)$ https://www.ciritas.ru/$1 [R=301,L,NE]
+
+# Legacy admin entry point; always use the HTTPS admin application.
+RewriteRule ^admin/?$ https://www.ciritas.ru/admin-modern/login.php [R=302,L,NE]
+
+# Legacy configuration files must remain accessible over plain HTTP/1.1
+# on the www host only. Do not redirect these four exact paths.
+RewriteCond %{HTTP_HOST} ^www\.ciritas\.ru$ [NC]
+RewriteCond %{REQUEST_URI} ^/(licenseparams|installparams|registersoft|supportparams)\.html$ [NC]
+RewriteRule ^ - [L]
+
+# Temporary HTTP -> HTTPS redirect for all other paths.
+# Check the reverse-proxy header to avoid redirect loops behind nginx.
+# After successful testing, change R=302 to R=301.
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !^https$ [NC]
+RewriteRule ^ https://www.ciritas.ru%{REQUEST_URI} [R=302,L,NE]
+
+# Kept from the existing CIRITAS configuration.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 </IfModule>
