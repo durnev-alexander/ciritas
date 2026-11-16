@@ -17,12 +17,11 @@ RewriteCond %{HTTP_HOST} ^www\.ciritas\.ru$ [NC]
 RewriteCond %{REQUEST_URI} ^/(licenseparams|installparams|registersoft|supportparams)\.html$ [NC]
 RewriteRule ^ - [L]
 
-# Temporary HTTP -> HTTPS redirect for all other paths.
+# Permanent HTTP -> HTTPS redirect for all other paths.
 # Check the reverse-proxy header to avoid redirect loops behind nginx.
-# After successful testing, change R=302 to R=301.
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !^https$ [NC]
-RewriteRule ^ https://www.ciritas.ru%{REQUEST_URI} [R=302,L,NE]
+RewriteRule ^ https://www.ciritas.ru%{REQUEST_URI} [R=301,L,NE]
 
 # Kept from the existing CIRITAS configuration.
 RewriteCond %{REQUEST_FILENAME} !-f
