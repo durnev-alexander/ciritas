@@ -31,3 +31,11 @@ html{scrollbar-gutter:stable;min-height:100%}:root{--bg:#f5f7fb;--card:#fff;--te
 .product-detail-section.product-html li{margin:0 0 7px}
 .product-detail-section.product-html li:last-child{margin-bottom:0}
 @media(max-width:560px){.product-section-nav{gap:7px}.product-section-nav a{padding:8px 11px;font-size:.88rem}.product-detail-section{scroll-margin-top:150px}}
+
+/* Normalize text pasted from legacy WYSIWYG editors in product descriptions.
+   Preserve heading hierarchy, emphasis, links and tables while preventing
+   inline Times New Roman/font sizes from changing one section's typography. */
+.product-detail-section.product-html{font-family:Inter,Arial,sans-serif}
+.product-detail-section.product-html *{font-family:inherit!important}
+.product-detail-section.product-html :is(p,li,div,span,font,td,th,a,strong,b,em,i,u,small){font-size:inherit!important}
+.product-detail-section.product-html :is(font,span)[color]{color:inherit!important}
