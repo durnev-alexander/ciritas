@@ -3,6 +3,19 @@ function render_header(string $title='ЦИРИТАС', array $seo=[]): void {
     $pageTitle=trim((string)($seo['title']??''));if($pageTitle==='')$pageTitle=$title.' — ЦИРИТАС';
     $description=trim((string)($seo['description']??''));
     $canonical=trim((string)($seo['canonical']??''));
+    // Stable canonical URLs for public pages. Product pages supply their own
+    // canonical with the product ID; service and order pages are not changed.
+    if($canonical===''){
+        $publicCanonicals=[
+            'index.php'=>'https://www.ciritas.ru/',
+            'products.php'=>'https://www.ciritas.ru/products.php',
+            'news.php'=>'https://www.ciritas.ru/news.php',
+            'support.php'=>'https://www.ciritas.ru/support.php',
+            'contacts.php'=>'https://www.ciritas.ru/contacts.php',
+        ];
+        $script=basename((string)($_SERVER['SCRIPT_NAME']??''));
+        $canonical=$publicCanonicals[$script]??'';
+    }
     $indexable=($seo['indexable']??true)!==false;
     ?><!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=htmlspecialchars($pageTitle,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?></title><?php if($description!==''): ?><meta name="description" content="<?=htmlspecialchars($description,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"><?php endif; ?><?php if($canonical!==''): ?><link rel="canonical" href="<?=htmlspecialchars($canonical,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8')?>"><?php endif; ?><?php if(!$indexable): ?><meta name="robots" content="noindex,follow"><?php endif; ?><link rel="icon" href="/favicon.ico?v=20261113" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20261113"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20261113"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261113"><script>(function(){try{var t=localStorage.getItem('ciritas_theme');document.documentElement.dataset.theme=t==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}})();</script><link rel="stylesheet" href="assets/css/site.css"><link rel="stylesheet" href="assets/css/cart-inline.css"><link rel="stylesheet" href="assets/css/public-compact.css"><link rel="stylesheet" href="assets/css/public-tweaks.css"><!-- Yandex.Metrika counter -->
 <script type="text/javascript">
