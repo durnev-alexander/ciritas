@@ -4,6 +4,12 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# A direct request for /index.php is a duplicate of the home page.
+# THE_REQUEST prevents redirecting Apache's internal DirectoryIndex handling.
+# This only matches the root index.php, never subdirectory index files.
+RewriteCond %{THE_REQUEST} \s/+index\.php[\s?] [NC]
+RewriteRule ^index\.php$ https://www.ciritas.ru/ [R=301,L,NE]
+
 # Canonical public host. Preserve the path and query string.
 RewriteCond %{HTTP_HOST} ^ciritas\.ru$ [NC]
 RewriteRule ^(.*)$ https://www.ciritas.ru/$1 [R=301,L,NE]
