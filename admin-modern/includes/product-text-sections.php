@@ -38,7 +38,7 @@ foreach($sections as $section){
                 <tr class="text-section-row js-text-section-open" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>">
                     <td class="text-section-preview-col">
                         <div class="text-section-preview js-text-section-preview" data-section-id="<?=$sid?>" data-section-title="<?=aesc($sectionTitle)?>" title="Открыть HTML-редактор">
-                            <iframe class="js-text-section-preview-frame" title="Превью: <?=aesc($sectionTitle)?>" tabindex="-1" sandbox="" allowtransparency="true" style="background:transparent!important;background-color:transparent!important"></iframe>
+                            <iframe class="js-text-section-preview-frame" title="Превью: <?=aesc($sectionTitle)?>" tabindex="-1" sandbox="allow-same-origin" loading="eager" allowtransparency="true" style="background:transparent!important;background-color:transparent!important"></iframe>
                         </div>
                     </td>
                     <td class="text-section-title">
@@ -149,23 +149,67 @@ window.ciritasProductTextContents=<?=json_encode($sectionContents,JSON_UNESCAPED
         var link=dark?'#8dccf1':'#246fa8';
         return '<!doctype html><html style="background:transparent!important;background-color:transparent!important"><head><meta charset="utf-8"><meta name="color-scheme" content="light dark"><style>html,body{margin:0;padding:0;background:none!important;background-color:transparent!important;background-image:none!important;color:'+text+';font-family:Arial,sans-serif}body{padding:18px;font-size:14px;line-height:1.45}body,body *{color:'+text+'!important}a,a *{color:'+link+'!important}small,.muted{color:'+muted+'!important}h1,h2,h3{margin:0 0 12px;line-height:1.25}h2{font-size:23px}p{margin:0 0 10px}img{max-width:100%;height:auto}table{max-width:100%;border-collapse:collapse}*{box-sizing:border-box;background:none!important;background-color:transparent!important;background-image:none!important}</style></head><body style="background:transparent!important;background-color:transparent!important"><h2>'+escapeHtml(title)+'</h2>'+content+'</body></html>';
     }
-    function renderTextSectionPreviews(){
+    // Render previews only when their rows approach the viewport. Loading all
+    // embedded HTML documents at once caused intermittent empty thumbnails.
+    var previewObserver=null;
+    function loadTextSectionPreview(preview,force){
+        var frame=preview.querySelector('.js-text-section-preview-frame');
+        if(!frame)return;
+        var theme=previewTheme();
+        if(!force&&preview.dataset.previewTheme===theme)return;
+        var id=preview.dataset.sectionId||'';
+        var title=preview.dataset.sectionTitle||'';
+        var html=previewDocument(title,(window.ciritasProductTextContents||{})[id]||'');
+        preview.dataset.previewTheme=theme;
+        frame.style.background='transparent';
+        frame.style.backgroundColor='transparent';
+        frame.dataset.previewRetries='0';
+        frame.onload=function(){
+            // sandbox allows same-origin inspection but still disables scripts.
+            // A rare blank iframe is reloaded at most twice.
+            var valid=false;
+            try{
+                var body=frame.contentDocument&&frame.contentDocument.body;
+                valid=!!(body&&body.querySelector('h2')&&body.textContent.trim());
+            }catch(e){valid=true;}
+            if(!valid){
+                var retries=Number(frame.dataset.previewRetries||0);
+                if(retries<2){
+                    frame.dataset.previewRetries=String(retries+1);
+                    setTimeout(function(){if(frame.isConnected)frame.srcdoc=html;},150*(retries+1));
+                }
+            }
+        };
+        frame.srcdoc=html;
+    }
+    function renderTextSectionPreviews(force){
         document.querySelectorAll('.js-text-section-preview').forEach(function(preview){
-            var id=preview.dataset.sectionId||'';
-            var title=preview.dataset.sectionTitle||'';
-            var frame=preview.querySelector('.js-text-section-preview-frame');
-            if(frame){
-                frame.style.background='transparent';
-                frame.style.backgroundColor='transparent';
-                frame.srcdoc=previewDocument(title,(window.ciritasProductTextContents||{})[id]||'');
+            if(previewObserver){
+                previewObserver.observe(preview);
+                if(force&&preview.dataset.previewVisible==='1')loadTextSectionPreview(preview,true);
+            }else{
+                loadTextSectionPreview(preview,!!force);
             }
         });
     }
-    renderTextSectionPreviews();
+    if('IntersectionObserver' in window){
+        previewObserver=new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+                var preview=entry.target;
+                if(entry.isIntersecting){
+                    preview.dataset.previewVisible='1';
+                    loadTextSectionPreview(preview,false);
+                }else{
+                    preview.dataset.previewVisible='0';
+                }
+            });
+        },{rootMargin:'400px 0px'});
+    }
+    renderTextSectionPreviews(false);
     new MutationObserver(function(mutations){
         for(var i=0;i<mutations.length;i++){
             if(mutations[i].attributeName==='data-theme'){
-                renderTextSectionPreviews();
+                renderTextSectionPreviews(true);
                 break;
             }
         }
